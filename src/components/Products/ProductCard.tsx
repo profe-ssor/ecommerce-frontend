@@ -2,37 +2,79 @@ import React, { useState } from 'react';
 import { Heart, Star, ShoppingCart } from 'lucide-react';
 import { Product } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
+import { addToCart } from '../../services/cartServices';
+import { addToWishlist, removeFromWishlist } from '../../services/wishlistServices';
+import { toast } from 'react-toastify';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { state, dispatch } = useApp();
+  const { state, dispatch, fetchCart, fetchWishlist } = useApp();
+  const { isAuthenticated } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const isInWishlist = state.wishlist.includes(product.id);
   const discountPercentage = product.compareAtPrice 
     ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : 0;
 
-  const handleWishlistToggle = (e: React.MouseEvent) => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch({ type: 'TOGGLE_WISHLIST', payload: product.id });
+    
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to wishlist');
+      return;
+    }
+
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(parseInt(product.id));
+        toast.success('Removed from wishlist');
+      } else {
+        await addToWishlist(parseInt(product.id));
+        toast.success('Added to wishlist');
+      }
+      
+      // Refresh wishlist
+      await fetchWishlist();
+    } catch (error) {
+      console.error('Wishlist error:', error);
+      toast.error('Failed to update wishlist');
+    }
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch({
-      type: 'ADD_TO_CART',
-      payload: {
-        product,
-        quantity: 1,
-        selectedSize: product.sizes[0],
-        selectedColor: product.colors[0]
-      }
-    });
+    
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      await addToCart(
+        parseInt(product.id),
+        1,
+        product.sizes[0],
+        product.colors[0]
+      );
+      
+      toast.success('Added to cart');
+      
+      // Refresh cart
+      await fetchCart();
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      toast.error('Failed to add to cart');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   return (
@@ -87,10 +129,11 @@ export function ProductCard({ product }: ProductCardProps) {
         }`}>
           <button
             onClick={handleAddToCart}
-            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-2"
+            disabled={isAddingToCart}
+            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
           >
             <ShoppingCart size={16} />
-            <span>Add to Cart</span>
+            <span>{isAddingToCart ? 'Adding...' : 'Add to Cart'}</span>
           </button>
         </div>
       </div>

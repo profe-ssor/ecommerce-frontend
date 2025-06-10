@@ -1,21 +1,22 @@
 import {
-
   Heart,
-
   Menu,
   Search,
   ShoppingCart,
   User,
   X,
+  LogOut,
 } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import images from "../../assets/images/images";
 import { useApp } from "../../context/AppContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
-import { SearchBar } from "./SearchBar"; // ✅ Ensure this exists
+import { SearchBar } from "./SearchBar";
 
 const Header = () => {
   const { state } = useApp();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -28,9 +29,16 @@ const Header = () => {
     { name: "Beauty & Accessories", path: "/beauty-accessories" },
     { name: "Kids & Baby", path: "/kids-baby" },
     { name: "Home", path: "/home" },
-  
     { name: "Clearance", path: "/clearance" },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <div className="sticky top-0 z-50 bg-white shadow-sm">
@@ -97,17 +105,36 @@ const Header = () => {
             <div className="dropdown">
               <div tabIndex={0} role="button" className="btn m-1">
                 <User />
+                {isAuthenticated && user && (
+                  <span className="hidden md:inline ml-2">{user.username}</span>
+                )}
               </div>
               <ul
                 tabIndex={0}
                 className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
               >
-                <li>
-                  <Link to="/account">Account</Link>
-                </li>
-                <li>
-                  <Link to="/logout">Logout</Link>
-                </li>
+                {isAuthenticated ? (
+                  <>
+                    <li>
+                      <Link to="/account">Account</Link>
+                    </li>
+                    <li>
+                      <Link to="/orders">Orders</Link>
+                    </li>
+                    <li>
+                      <button onClick={handleLogout} className="flex items-center gap-2">
+                        <LogOut size={16} />
+                        Logout
+                      </button>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      <Link to="/login">Login</Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
@@ -117,7 +144,9 @@ const Header = () => {
       {/* Mobile Search */}
       {isSearchOpen && (
         <div className="lg:hidden py-4 px-4 border-t border-gray-200 bg-white">
-          <button  onClick={() => setIsSearchOpen(!isSearchOpen)}><SearchBar /></button>
+          <button onClick={() => setIsSearchOpen(!isSearchOpen)}>
+            <SearchBar />
+          </button>
         </div>
       )}
 

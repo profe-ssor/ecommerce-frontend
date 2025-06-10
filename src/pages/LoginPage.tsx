@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { loginUser, registerUser } from '../services/authServices';
-import { useNavigate } from 'react-router-dom'
-
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [showRegistration, setShowRegistration] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
@@ -53,7 +54,8 @@ const LoginPage = () => {
       setShowRegistration(false);
       setFormData({ email: '', username: '', password: '' });
       
-       navigate('/login');
+      // Switch to login modal after successful registration
+      setShowLogin(true);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Registration failed!');
     }
@@ -63,10 +65,18 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const res = await loginUser(loginData);
+      
+      // Set user in auth context
+      setUser({
+        id: res.user_id,
+        email: res.email,
+        username: res.username,
+      });
+      
       toast.success('Login successful!');
       setShowLogin(false);
       setLoginData({ email: '', password: '' });
-       navigate('/');
+      navigate('/');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed!');
     }
@@ -112,7 +122,7 @@ const LoginPage = () => {
 
           {/* Brand Label */}
           <div className="absolute bottom-8 left-15 bg-white bg-opacity-90 px-5 py-2 rounded-full font-bold text-blue-900 text-lg backdrop-blur-sm">
-            ShopEase
+            Osko Buys
           </div>
         </div>
       </div>
@@ -127,7 +137,7 @@ const LoginPage = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              <h2 className="text-3xl font-bold text-white mb-2">Join ShopEase</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Join Osko Buys</h2>
               <p className="text-blue-100">Start your shopping journey!</p>
             </div>
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
