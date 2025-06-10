@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import { Heart, Star, ShoppingCart } from 'lucide-react';
+import { Product } from '../../types';
+import { useApp } from '../../context/AppContext';
+
+interface ProductCardProps {
+  product: Product;
+}
+
+export function ProductCard({ product }: ProductCardProps) {
+  const { state, dispatch } = useApp();
+  const [isHovered, setIsHovered] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const isInWishlist = state.wishlist.includes(product.id);
+  const discountPercentage = product.compareAtPrice 
+    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+    : 0;
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dispatch({ type: 'TOGGLE_WISHLIST', payload: product.id });
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dispatch({
+      type: 'ADD_TO_CART',
+      payload: {
+        product,
+        quantity: 1,
+        selectedSize: product.sizes[0],
+        selectedColor: product.colors[0]
+      }
+    });
+  };
+
+  return (
+    <div 
+      className="group relative bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Image Container */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+        )}
+        <img
+          src={product.image}
+          alt={product.name}
+          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImageLoaded(true)}
+        />
+        
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col space-y-1">
+          {product.isNew && (
+            <span className="bg-primary text-white text-xs font-medium px-2 py-1 rounded">
+              NEW
+            </span>
+          )}
+          {discountPercentage > 0 && (
+            <span className="bg-deep-blue text-white text-xs font-medium px-2 py-1 rounded">
+              -{discountPercentage}%
+            </span>
+          )}
+        </div>
+
+        {/* Wishlist Button */}
+        <button
+          onClick={handleWishlistToggle}
+          className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 ${
+            isInWishlist 
+              ? 'bg-primary text-white' 
+              : 'bg-white/80 text-gray-600 hover:bg-white hover:text-primary'
+          }`}
+        >
+          <Heart size={16} fill={isInWishlist ? 'currentColor' : 'none'} />
+        </button>
+
+        {/* Quick Add to Cart - appears on hover */}
+        <div className={`absolute bottom-3 left-3 right-3 transition-all duration-300 ${
+          isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}>
+          <button
+            onClick={handleAddToCart}
+            className="w-full bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center space-x-2"
+          >
+            <ShoppingCart size={16} />
+            <span>Add to Cart</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Product Info */}
+      <div className="p-4">
+        <div className="mb-2">
+          <p className="text-sm text-gray-600 mb-1">{product.brand}</p>
+          <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center space-x-1 mb-2">
+          <div className="flex items-center">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star
+                key={i}
+                size={12}
+                className={i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-600">({product.reviewCount})</span>
+        </div>
+
+        {/* Price */}
+        <div className="flex items-center space-x-2">
+          <span className="text-lg font-semibold text-gray-900">
+            ${product.price.toFixed(2)}
+          </span>
+          {product.compareAtPrice && (
+            <span className="text-sm text-gray-500 line-through">
+              ${product.compareAtPrice.toFixed(2)}
+            </span>
+          )}
+        </div>
+
+        {/* Color Options */}
+        {product.colors.length > 1 && (
+          <div className="flex items-center space-x-1 mt-2">
+            {product.colors.slice(0, 4).map((color, index) => (
+              <div
+                key={index}
+                className="w-4 h-4 rounded-full border border-gray-300"
+                style={{ 
+                  backgroundColor: color.toLowerCase() === 'white' ? '#ffffff' : 
+                                 color.toLowerCase() === 'black' ? '#000000' :
+                                 color.toLowerCase() === 'gray' ? '#6b7280' :
+                                 color.toLowerCase() === 'navy' ? '#1e3a8a' :
+                                 color.toLowerCase() === 'brown' ? '#92400e' :
+                                 color.toLowerCase() === 'pink' ? '#ec4899' :
+                                 color.toLowerCase() === 'blue' ? '#3b82f6' :
+                                 color.toLowerCase() === 'red' ? '#ef4444' :
+                                 color.toLowerCase() === 'green' ? '#10b981' :
+                                 '#d1d5db'
+                }}
+                title={color}
+              />
+            ))}
+            {product.colors.length > 4 && (
+              <span className="text-xs text-gray-500">+{product.colors.length - 4}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
