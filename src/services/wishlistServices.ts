@@ -2,79 +2,64 @@ import { api } from './api';
 
 export interface WishlistItem {
   id: string;
-  product: string;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    brand: string;
+  };
   created_at: string;
 }
 
-// Mock wishlist data for fallback
-let mockWishlist: WishlistItem[] = [];
-
-// Check if backend is available
-const isBackendAvailable = async (): Promise<boolean> => {
+export const getWishlist = async (): Promise<WishlistItem[]> => {
   try {
-    await api.get('/api/health/', { timeout: 2000 });
-    return true;
-  } catch {
+    const response = await api.get('/api/wishlist/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    throw error;
+  }
+};
+
+export const addToWishlist = async (productId: number): Promise<WishlistItem> => {
+  try {
+    const response = await api.post('/api/wishlist/add/', {
+      product_id: productId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    throw error;
+  }
+};
+
+export const removeFromWishlist = async (productId: number): Promise<void> => {
+  try {
+    await api.delete(`/api/wishlist/remove/${productId}/`);
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    throw error;
+  }
+};
+
+export const isInWishlist = async (productId: number): Promise<boolean> => {
+  try {
+    const response = await api.get(`/api/wishlist/check/${productId}/`);
+    return response.data.in_wishlist;
+  } catch (error) {
+    console.error('Error checking wishlist:', error);
     return false;
   }
 };
 
-export const getWishlist = async (): Promise<WishlistItem[]> => {
+// Get wishlist item count
+export const getWishlistItemCount = async (): Promise<number> => {
   try {
-    // First try to use the backend API
-    const backendAvailable = await isBackendAvailable();
-    
-    if (backendAvailable) {
-      const response = await api.get('/api/wishlist/');
-      return response.data;
-    }
+    const response = await api.get('/api/wishlist/count/');
+    return response.data.count;
   } catch (error) {
-    console.warn('Backend API not available, using mock wishlist:', error);
+    console.error('Error fetching wishlist count:', error);
+    return 0;
   }
-
-  // Fallback to mock data
-  return mockWishlist;
-};
-
-export const addToWishlist = async (productId: string): Promise<WishlistItem> => {
-  try {
-    // First try to use the backend API
-    const backendAvailable = await isBackendAvailable();
-    
-    if (backendAvailable) {
-      const response = await api.post('/api/wishlist/', {
-        product: productId,
-      });
-      return response.data;
-    }
-  } catch (error) {
-    console.warn('Backend API not available, using mock wishlist:', error);
-  }
-
-  // Fallback to mock data
-  const newItem: WishlistItem = {
-    id: `mock-wishlist-${Date.now()}`,
-    product: productId,
-    created_at: new Date().toISOString(),
-  };
-  
-  mockWishlist.push(newItem);
-  return newItem;
-};
-
-export const removeFromWishlist = async (productId: string): Promise<void> => {
-  try {
-    // First try to use the backend API
-    const backendAvailable = await isBackendAvailable();
-    
-    if (backendAvailable) {
-      await api.delete(`/api/wishlist/${productId}/`);
-      return;
-    }
-  } catch (error) {
-    console.warn('Backend API not available, using mock wishlist:', error);
-  }
-
-  // Fallback to mock data
-  mockWishlist = mockWishlist.filter(item => item.product !== productId);
 };

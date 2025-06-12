@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { addToCart } from '../../services/cartServices';
 import { addToWishlist, removeFromWishlist } from '../../services/wishlistServices';
+import { getProductImageUrl } from '../../utils/cloudinary';
 import { toast } from 'react-toastify';
 
 interface ProductCardProps {
@@ -22,6 +23,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const discountPercentage = product.compareAtPrice 
     ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : 0;
+
+  // Get optimized image URL from Cloudinary
+  const imageUrl = getProductImageUrl(product.image, product.category, 'medium');
+  const thumbnailUrl = getProductImageUrl(product.image, product.category, 'thumbnail');
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -89,12 +94,13 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
         <img
-          src={product.image}
+          src={imageUrl}
           alt={product.name}
           className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={() => setImageLoaded(true)}
+          loading="lazy"
         />
         
         {/* Badges */}

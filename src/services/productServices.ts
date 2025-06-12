@@ -1,8 +1,8 @@
 import { api } from './api';
 import type { Product } from '../types';
 
-// Import mock data as fallback
-import { mockProducts } from '../data/mockProducts';
+// Cloudinary configuration
+const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1749684375/ecommerce/';
 
 export interface ProductFilters {
   search?: string;
@@ -12,6 +12,11 @@ export interface ProductFilters {
   ordering?: string;
   page?: number;
   page_size?: number;
+  brand?: string;
+  size?: string;
+  color?: string;
+  is_new?: boolean;
+  is_featured?: boolean;
 }
 
 export interface ProductResponse {
@@ -21,134 +26,125 @@ export interface ProductResponse {
   results: Product[];
 }
 
-// Check if backend is available
-const isBackendAvailable = async (): Promise<boolean> => {
-  try {
-    await api.get('/api/health/', { timeout: 2000 });
-    return true;
-  } catch {
-    return false;
-  }
+// Helper function to construct Cloudinary image URLs
+export const getCloudinaryImageUrl = (imagePath: string, category?: string): string => {
+  if (!imagePath) return '';
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http')) return imagePath;
+  
+  // Construct Cloudinary URL with category folder
+  const categoryFolder = category ? `${category.toLowerCase().replace(/\s+/g, '_')}/` : '';
+  return `${CLOUD_BASE_URL}${categoryFolder}${imagePath}`;
 };
 
-// Filter mock products based on filters
-const filterMockProducts = (products: Product[], filters: ProductFilters): Product[] => {
-  let filtered = [...products];
-
-  // Search filter
-  if (filters.search) {
-    const searchTerm = filters.search.toLowerCase();
-    filtered = filtered.filter(product => 
-      product.name.toLowerCase().includes(searchTerm) ||
-      product.description.toLowerCase().includes(searchTerm) ||
-      product.category.toLowerCase().includes(searchTerm)
-    );
-  }
-
-  // Category filter
-  if (filters.category) {
-    filtered = filtered.filter(product => 
-      product.category.toLowerCase() === filters.category?.toLowerCase()
-    );
-  }
-
-  // Price range filter
-  if (filters.min_price !== undefined) {
-    filtered = filtered.filter(product => product.price >= filters.min_price!);
-  }
-  if (filters.max_price !== undefined) {
-    filtered = filtered.filter(product => product.price <= filters.max_price!);
-  }
-
-  // Sorting
-  if (filters.ordering) {
-    switch (filters.ordering) {
-      case 'price':
-        filtered.sort((a, b) => a.price - b.price);
-        break;
-      case '-price':
-        filtered.sort((a, b) => b.price - a.price);
-        break;
-      case 'name':
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case '-name':
-        filtered.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case '-created_at':
-        // For mock data, we'll use a random sort for "newest"
-        filtered.sort(() => Math.random() - 0.5);
-        break;
-      case '-rating':
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-    }
-  }
-
-  return filtered;
-};
-
-// Paginate results
-const paginateResults = (products: Product[], page: number = 1, pageSize: number = 12) => {
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  return products.slice(startIndex, endIndex);
+// Transform backend product data to frontend format
+const transformProduct = (backendProduct: any): Product => {
+  return {
+    id: backendProduct.id.toString(),
+    name: backendProduct.name,
+    brand: backendProduct.brand || 'Unknown Brand',
+    price: parseFloat(backendProduct.price),
+    compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price) : undefined,
+    image: getCloudinaryImageUrl(backendProduct.image, backendProduct.category),
+    images: backendProduct.images ? backendProduct.images.map((img: string) => 
+      getCloudinaryImageUrl(img, backendProduct.category)
+    ) : [getCloudinaryImageUrl(backendProduct.image, backendProduct.category)],
+    category: backendProduct.category,
+    subcategory: backendProduct.subcategory || '',
+    colors: backendProduct.colors || [],
+    sizes: backendProduct.sizes || [],
+    isNew: backendProduct.is_new || false,
+    isFeatured: backendProduct.is_featured || false,
+    rating: backendProduct.rating || 4.0,
+    reviewCount: backendProduct.review_count || 0,
+    description: backendProduct.description || '',
+    tags: backendProduct.tags || [],
+  };
 };
 
 export const getProducts = async (filters: ProductFilters = {}): Promise<ProductResponse> => {
   try {
-    // First try to use the backend API
-    const backendAvailable = await isBackendAvailable();
+    const params = new URLSearchParams();
     
-    if (backendAvailable) {
-      const params = new URLSearchParams();
-      
-      if (filters.search) params.append('search', filters.search);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.min_price !== undefined) params.append('min_price', filters.min_price.toString());
-      if (filters.max_price !== undefined) params.append('max_price', filters.max_price.toString());
-      if (filters.ordering) params.append('ordering', filters.ordering);
-      if (filters.page) params.append('page', filters.page.toString());
-      if (filters.page_size) params.append('page_size', filters.page_size.toString());
+    // Add filters to params
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value.toString());
+      }
+    });
 
-      const response = await api.get(`/api/products/?${params.toString()}`);
-      return response.data;
-    }
+    const response = await api.get(`/api/products/?${params.toString()}`);
+    
+    return {
+      count: response.data.count,
+      next: response.data.next,
+      previous: response.data.previous,
+      results: response.data.results.map(transformProduct),
+    };
   } catch (error) {
-    console.warn('Backend API not available, using mock data:', error);
+    console.error('Error fetching products:', error);
+    throw error;
   }
-
-  // Fallback to mock data
-  const filtered = filterMockProducts(mockProducts, filters);
-  const page = filters.page || 1;
-  const pageSize = filters.page_size || 12;
-  const paginatedResults = paginateResults(filtered, page, pageSize);
-
-  return {
-    count: filtered.length,
-    next: page * pageSize < filtered.length ? `page=${page + 1}` : null,
-    previous: page > 1 ? `page=${page - 1}` : null,
-    results: paginatedResults,
-  };
 };
 
 export const getProduct = async (id: string): Promise<Product> => {
   try {
-    // First try to use the backend API
-    const backendAvailable = await isBackendAvailable();
-    
-    if (backendAvailable) {
-      const response = await api.get(`/api/products/${id}/`);
-      return response.data;
-    }
+    const response = await api.get(`/api/products/${id}/`);
+    return transformProduct(response.data);
   } catch (error) {
-    console.warn('Backend API not available, using mock data:', error);
+    console.error('Error fetching product:', error);
+    throw error;
   }
+};
 
-  // Fallback to mock data
-  const product = mockProducts.find(p => p.id === id);
-  if (!product) {
-    throw new Error('Product not found');
+export const getCategories = async () => {
+  try {
+    const response = await api.get('/api/products/categories/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
   }
-  return product;
+};
+
+export const getBrands = async () => {
+  try {
+    const response = await api.get('/api/products/brands/');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching brands:', error);
+    throw error;
+  }
+};
+
+export const getFeaturedProducts = async (): Promise<Product[]> => {
+  try {
+    const response = await api.get('/api/products/?is_featured=true&page_size=8');
+    return response.data.results.map(transformProduct);
+  } catch (error) {
+    console.error('Error fetching featured products:', error);
+    throw error;
+  }
+};
+
+export const getNewArrivals = async (): Promise<Product[]> => {
+  try {
+    const response = await api.get('/api/products/?is_new=true&page_size=8');
+    return response.data.results.map(transformProduct);
+  } catch (error) {
+    console.error('Error fetching new arrivals:', error);
+    throw error;
+  }
+};
+
+// Search products
+export const searchProducts = async (query: string): Promise<Product[]> => {
+  try {
+    const response = await api.get(`/api/products/?search=${encodeURIComponent(query)}`);
+    return response.data.results.map(transformProduct);
+  } catch (error) {
+    console.error('Error searching products:', error);
+    throw error;
+  }
 };
