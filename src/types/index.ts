@@ -51,3 +51,15 @@ export interface AppState {
   wishlist: string[];
   totalProducts: number;
 }
+
+export interface WishlistItem {
+  id: string;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    brand: string;
+  };
+  created_at: string;
+}

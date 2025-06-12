@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { getProducts, ProductFilters } from '../services/productServices';
+import { getProducts } from '../services/productServices';
+import type { ProductFilters } from '../services/productServices';
 import { getCart } from '../services/cartServices';
 import { getWishlist } from '../services/wishlistServices';
 import type { AppState, CartItem, FilterState, Product } from '../types';
@@ -89,7 +90,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         cart: state.cart.filter(item => item.product.id !== action.payload),
       };
-    case 'TOGGLE_WISHLIST':
+    case 'TOGGLE_WISHLIST': {
       const isInWishlist = state.wishlist.includes(action.payload);
       return {
         ...state,
@@ -97,6 +98,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
           ? state.wishlist.filter(id => id !== action.payload)
           : [...state.wishlist, action.payload],
       };
+    }
     case 'CLEAR_FILTERS':
       return {
         ...state,
@@ -120,30 +122,33 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState);
   const { isAuthenticated } = useAuth();
 
-  const fetchProducts = async (filters: ProductFilters = {}) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      const response = await getProducts({
-        ...filters,
-        page: state.currentPage,
-        page_size: state.itemsPerPage,
-      });
-      
-      dispatch({
-        type: 'SET_PRODUCTS',
-        payload: {
-          products: response.results,
-          total: response.count,
-        },
-      });
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+  const fetchProducts = React.useCallback(
+    async (filters: ProductFilters = {}) => {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      try {
+        const response = await getProducts({
+          ...filters,
+          page: state.currentPage,
+          page_size: state.itemsPerPage,
+        });
+        
+        dispatch({
+          type: 'SET_PRODUCTS',
+          payload: {
+            products: response.results,
+            total: response.count,
+          },
+        });
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false });
+      }
+    },
+    [state.currentPage, state.itemsPerPage, dispatch]
+  );
 
-  const fetchCart = async () => {
+  const fetchCart = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
@@ -159,9 +164,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
-  };
+  }, [isAuthenticated, state.products, dispatch]);
 
-  const fetchWishlist = async () => {
+  const fetchWishlist = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
@@ -171,7 +176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     }
-  };
+  }, [isAuthenticated, dispatch]);
 
   useEffect(() => {
     fetchProducts();
@@ -182,7 +187,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       fetchCart();
       fetchWishlist();
     }
-  }, [isAuthenticated]);
+  }, [fetchCart, fetchWishlist, isAuthenticated]);
 
   // Fetch products when filters or sorting changes
   useEffect(() => {
@@ -201,7 +206,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     fetchProducts(filters);
-  }, [state.filters, state.sortBy, state.currentPage]);
+  }, [state.filters, state.sortBy, state.currentPage, fetchProducts]);
 
   return (
     <AppContext.Provider value={{ state, dispatch, fetchProducts, fetchCart, fetchWishlist }}>

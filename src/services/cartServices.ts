@@ -27,7 +27,7 @@ export interface CartResponse {
 
 export const getCart = async (): Promise<CartResponse> => {
   try {
-    const response = await api.get('/api/cart/');
+    const response = await api.get('/orders/api/cart/');
     return response.data;
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -42,7 +42,7 @@ export const addToCart = async (
   color?: string
 ): Promise<CartItem> => {
   try {
-    const response = await api.post('/api/cart/add/', {
+    const response = await api.post('/orders/api/cart/add/', {
       product_id: productId,
       quantity,
       size,
@@ -57,7 +57,7 @@ export const addToCart = async (
 
 export const updateCartItem = async (itemId: string, quantity: number): Promise<CartItem> => {
   try {
-    const response = await api.patch(`/api/cart/items/${itemId}/`, {
+    const response = await api.patch(`/orders/api/cart/items/${itemId}/`, {
       quantity,
     });
     return response.data;
@@ -69,7 +69,7 @@ export const updateCartItem = async (itemId: string, quantity: number): Promise<
 
 export const removeFromCart = async (itemId: string): Promise<void> => {
   try {
-    await api.delete(`/api/cart/items/${itemId}/`);
+    await api.delete(`/orders/api/cart/items/${itemId}/`);
   } catch (error) {
     console.error('Error removing from cart:', error);
     throw error;
@@ -78,7 +78,7 @@ export const removeFromCart = async (itemId: string): Promise<void> => {
 
 export const clearCart = async (): Promise<void> => {
   try {
-    await api.delete('/api/cart/clear/');
+    await api.delete('/orders/api/cart/clear/');
   } catch (error) {
     console.error('Error clearing cart:', error);
     throw error;
@@ -88,7 +88,7 @@ export const clearCart = async (): Promise<void> => {
 // Get cart item count
 export const getCartItemCount = async (): Promise<number> => {
   try {
-    const response = await api.get('/api/cart/count/');
+    const response = await api.get('/orders/api/cart/count/');
     return response.data.count;
   } catch (error) {
     console.error('Error fetching cart count:', error);

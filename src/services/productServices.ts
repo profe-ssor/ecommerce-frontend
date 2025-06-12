@@ -38,14 +38,35 @@ export const getCloudinaryImageUrl = (imagePath: string, category?: string): str
   return `${CLOUD_BASE_URL}${categoryFolder}${imagePath}`;
 };
 
+// Backend product type definition
+interface BackendProduct {
+  id: string | number;
+  name: string;
+  brand?: string;
+  price: string | number;
+  compare_at_price?: string | number;
+  image: string;
+  images?: string[];
+  category: string;
+  subcategory?: string;
+  colors?: string[];
+  sizes?: string[];
+  is_new?: boolean;
+  is_featured?: boolean;
+  rating?: number;
+  review_count?: number;
+  description?: string;
+  tags?: string[];
+}
+
 // Transform backend product data to frontend format
-const transformProduct = (backendProduct: any): Product => {
+const transformProduct = (backendProduct: BackendProduct): Product => {
   return {
     id: backendProduct.id.toString(),
     name: backendProduct.name,
     brand: backendProduct.brand || 'Unknown Brand',
-    price: parseFloat(backendProduct.price),
-    compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price) : undefined,
+    price: parseFloat(backendProduct.price as string),
+    compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price as string) : undefined,
     image: getCloudinaryImageUrl(backendProduct.image, backendProduct.category),
     images: backendProduct.images ? backendProduct.images.map((img: string) => 
       getCloudinaryImageUrl(img, backendProduct.category)
@@ -66,21 +87,23 @@ const transformProduct = (backendProduct: any): Product => {
 export const getProducts = async (filters: ProductFilters = {}): Promise<ProductResponse> => {
   try {
     const params = new URLSearchParams();
-    
-    // Add filters to params
+
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params.append(key, value.toString());
       }
     });
 
-    const response = await api.get(`/api/products/?${params.toString()}`);
-    
+    const response = await api.get(`/products/api/products/?${params.toString()}`);
+    const data = response.data;
+
+    const rawResults = Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : [];
+
     return {
-      count: response.data.count,
-      next: response.data.next,
-      previous: response.data.previous,
-      results: response.data.results.map(transformProduct),
+      count: data.count ?? rawResults.length,
+      next: data.next ?? null,
+      previous: data.previous ?? null,
+      results: rawResults.map(transformProduct),
     };
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -88,9 +111,11 @@ export const getProducts = async (filters: ProductFilters = {}): Promise<Product
   }
 };
 
-export const getProduct = async (id: string): Promise<Product> => {
+
+export const getProduct = async (slug: string): Promise<Product> => {
   try {
-    const response = await api.get(`/api/products/${id}/`);
+    const response = await api.get(`/products/api/products/${slug}/`);
+
     return transformProduct(response.data);
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -100,7 +125,7 @@ export const getProduct = async (id: string): Promise<Product> => {
 
 export const getCategories = async () => {
   try {
-    const response = await api.get('/api/products/categories/');
+    const response = await api.get('/products/api/categories/');
     return response.data;
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -110,7 +135,8 @@ export const getCategories = async () => {
 
 export const getBrands = async () => {
   try {
-    const response = await api.get('/api/products/brands/');
+    const response = await api.get('/products/api/brands/');
+
     return response.data;
   } catch (error) {
     console.error('Error fetching brands:', error);
@@ -120,7 +146,7 @@ export const getBrands = async () => {
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
   try {
-    const response = await api.get('/api/products/?is_featured=true&page_size=8');
+    const response = await api.get('/products/api/products/?is_featured=true&page_size=8');
     return response.data.results.map(transformProduct);
   } catch (error) {
     console.error('Error fetching featured products:', error);
@@ -130,7 +156,8 @@ export const getFeaturedProducts = async (): Promise<Product[]> => {
 
 export const getNewArrivals = async (): Promise<Product[]> => {
   try {
-    const response = await api.get('/api/products/?is_new=true&page_size=8');
+    const response = await api.get('/products/api/products/?is_new=true&page_size=8');
+;
     return response.data.results.map(transformProduct);
   } catch (error) {
     console.error('Error fetching new arrivals:', error);
@@ -141,7 +168,8 @@ export const getNewArrivals = async (): Promise<Product[]> => {
 // Search products
 export const searchProducts = async (query: string): Promise<Product[]> => {
   try {
-    const response = await api.get(`/api/products/?search=${encodeURIComponent(query)}`);
+    const response = await api.get(`/products/api/products/?search=${encodeURIComponent(query)}`);
+
     return response.data.results.map(transformProduct);
   } catch (error) {
     console.error('Error searching products:', error);

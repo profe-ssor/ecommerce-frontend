@@ -63,7 +63,7 @@ export interface CreateOrderData {
 
 export const getOrders = async (): Promise<Order[]> => {
   try {
-    const response = await api.get('/api/orders/');
+    const response = await api.get('/orders/api/orders/');
     return response.data.results || response.data;
   } catch (error) {
     console.error('Error fetching orders:', error);
@@ -73,7 +73,7 @@ export const getOrders = async (): Promise<Order[]> => {
 
 export const getOrder = async (orderId: string): Promise<Order> => {
   try {
-    const response = await api.get(`/api/orders/${orderId}/`);
+    const response = await api.get(`/orders/api/orders/${orderId}/`);
     return response.data;
   } catch (error) {
     console.error('Error fetching order:', error);
@@ -83,7 +83,7 @@ export const getOrder = async (orderId: string): Promise<Order> => {
 
 export const createOrder = async (orderData: CreateOrderData): Promise<Order> => {
   try {
-    const response = await api.post('/api/orders/', orderData);
+    const response = await api.post('/orders/api/orders/place/', orderData);
     return response.data;
   } catch (error) {
     console.error('Error creating order:', error);
@@ -93,7 +93,7 @@ export const createOrder = async (orderData: CreateOrderData): Promise<Order> =>
 
 export const updateOrderStatus = async (orderId: string, status: string): Promise<Order> => {
   try {
-    const response = await api.patch(`/api/orders/${orderId}/`, { status });
+    const response = await api.patch(`/orders/api/orders/${orderId}/`, { status });
     return response.data;
   } catch (error) {
     console.error('Error updating order status:', error);
@@ -103,7 +103,7 @@ export const updateOrderStatus = async (orderId: string, status: string): Promis
 
 export const cancelOrder = async (orderId: string): Promise<Order> => {
   try {
-    const response = await api.patch(`/api/orders/${orderId}/cancel/`);
+    const response = await api.patch(`/orders/api/orders/${orderId}/cancel/`);
     return response.data;
   } catch (error) {
     console.error('Error cancelling order:', error);
@@ -113,7 +113,7 @@ export const cancelOrder = async (orderId: string): Promise<Order> => {
 
 export const trackOrder = async (trackingNumber: string): Promise<any> => {
   try {
-    const response = await api.get(`/api/orders/track/${trackingNumber}/`);
+    const response = await api.get(`/orders/api/orders/track/${trackingNumber}/`);
     return response.data;
   } catch (error) {
     console.error('Error tracking order:', error);
@@ -124,7 +124,7 @@ export const trackOrder = async (trackingNumber: string): Promise<any> => {
 // Get order history with pagination
 export const getOrderHistory = async (page: number = 1, pageSize: number = 10) => {
   try {
-    const response = await api.get(`/api/orders/?page=${page}&page_size=${pageSize}`);
+    const response = await api.get(`/orders/api/orders/?page=${page}&page_size=${pageSize}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching order history:', error);

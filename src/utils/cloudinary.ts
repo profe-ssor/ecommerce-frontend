@@ -1,13 +1,15 @@
-// Cloudinary utility functions
-const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1749684375/ecommerce/';
+const CLOUD_NAME = 'dhicyzdr5';
+const VERSION = 'v1';
+const ROOT_FOLDER = 'ecommerce';
+const CLOUD_BASE_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
 
-// Category folder mapping
+// Folder mapping
 const CATEGORY_FOLDERS = {
   'dresses': 'dresses',
   'women': 'women',
   'men': 'men',
-  'beauty & accessories': 'beauty_accessories',
-  'kids & baby': 'kids_baby',
+  'beauty & accessories': 'beauty-accessories',
+  'kids & baby': 'kids-baby',
   'home': 'home',
   'shoes': 'shoes',
   'accessories': 'accessories',
@@ -18,47 +20,53 @@ const CATEGORY_FOLDERS = {
 } as const;
 
 export const getCloudinaryImageUrl = (
-  imagePath: string, 
+  imagePath: string,
   category?: string,
   transformations?: string
 ): string => {
-  if (!imagePath) return '';
+  console.log('🔍 Input params:', { imagePath, category, transformations });
   
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http')) return imagePath;
-  
-  // Get category folder
-  const categoryKey = category?.toLowerCase().replace(/\s+/g, ' ') as keyof typeof CATEGORY_FOLDERS;
-  const categoryFolder = CATEGORY_FOLDERS[categoryKey] || 'general';
-  
-  // Build URL with optional transformations
-  const baseUrl = `${CLOUD_BASE_URL}${categoryFolder}/`;
-  
-  if (transformations) {
-    // Insert transformations before the image path
-    return `${CLOUD_BASE_URL}${transformations}/${categoryFolder}/${imagePath}`;
+  if (!imagePath) {
+    console.log('❌ Empty imagePath, returning empty string');
+    return '';
   }
   
-  return `${baseUrl}${imagePath}`;
+  if (imagePath.startsWith('http')) {
+    console.log('🌐 Already a full URL, returning as-is:', imagePath);
+    return imagePath;
+  }
+
+  const key = category?.toLowerCase().replace(/\s+/g, ' ') as keyof typeof CATEGORY_FOLDERS;
+  const folder = CATEGORY_FOLDERS[key] || 'general';
+  const path = `${ROOT_FOLDER}/${folder}/${imagePath}`;
+  
+  console.log('📁 Folder mapping:', { category, key, folder, path });
+
+  const finalUrl = transformations
+    ? `${CLOUD_BASE_URL}/${transformations}/${VERSION}/${path}`
+    : `${CLOUD_BASE_URL}/${VERSION}/${path}`;
+    
+  console.log('🎯 Final URL:', finalUrl);
+  return finalUrl;
 };
 
-// Common image transformations
 export const getProductImageUrl = (
-  imagePath: string, 
-  category?: string, 
+  imagePath: string,
+  category?: string,
   size: 'thumbnail' | 'medium' | 'large' | 'original' = 'medium'
 ): string => {
+  console.log('🖼️ getProductImageUrl called:', { imagePath, category, size });
+  
   const transformations = {
     thumbnail: 'w_200,h_200,c_fill,q_auto,f_auto',
     medium: 'w_400,h_400,c_fill,q_auto,f_auto',
     large: 'w_800,h_800,c_fill,q_auto,f_auto',
-    original: 'q_auto,f_auto'
+    original: 'q_auto,f_auto',
   };
-  
+
   return getCloudinaryImageUrl(imagePath, category, transformations[size]);
 };
 
-// Get optimized image for different use cases
 export const getOptimizedImageUrl = (
   imagePath: string,
   category?: string,
@@ -70,23 +78,24 @@ export const getOptimizedImageUrl = (
     crop?: 'fill' | 'fit' | 'scale' | 'crop';
   } = {}
 ): string => {
+  console.log('⚡ getOptimizedImageUrl called:', { imagePath, category, options });
+  
   const {
     width,
     height,
     quality = 'auto',
     format = 'auto',
-    crop = 'fill'
+    crop = 'fill',
   } = options;
-  
-  const transformations = [];
-  
-  if (width) transformations.push(`w_${width}`);
-  if (height) transformations.push(`h_${height}`);
-  if (crop) transformations.push(`c_${crop}`);
-  transformations.push(`q_${quality}`);
-  transformations.push(`f_${format}`);
-  
-  return getCloudinaryImageUrl(imagePath, category, transformations.join(','));
+
+  const transforms = [];
+  if (width) transforms.push(`w_${width}`);
+  if (height) transforms.push(`h_${height}`);
+  if (crop) transforms.push(`c_${crop}`);
+  transforms.push(`q_${quality}`);
+  transforms.push(`f_${format}`);
+
+  return getCloudinaryImageUrl(imagePath, category, transforms.join(','));
 };
 
 export default {

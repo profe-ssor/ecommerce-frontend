@@ -1,16 +1,7 @@
+import type { WishlistItem } from '../types';
 import { api } from './api';
 
-export interface WishlistItem {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    brand: string;
-  };
-  created_at: string;
-}
+
 
 export const getWishlist = async (): Promise<WishlistItem[]> => {
   try {

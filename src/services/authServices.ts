@@ -3,7 +3,7 @@ import type { LoginData, LoginResponse, RegisterData, RegisterResponse } from '.
 
 export const registerUser = async (data: RegisterData): Promise<RegisterResponse> => {
   try {
-    const response = await api.post<RegisterResponse>('/api/auth/register/', data);
+    const response = await api.post<RegisterResponse>('/api/register/', data);
     return response.data;
   } catch (error) {
     console.error('Registration error:', error);
@@ -13,7 +13,7 @@ export const registerUser = async (data: RegisterData): Promise<RegisterResponse
 
 export const loginUser = async (data: LoginData): Promise<LoginResponse> => {
   try {
-    const response = await api.post<LoginResponse>('/api/auth/login/', data);
+    const response = await api.post<LoginResponse>('/api/login/', data);
     
     // Store tokens and user data
     if (response.data.access) {
@@ -51,7 +51,7 @@ export const logoutUser = async (): Promise<void> => {
 
 export const getCurrentUser = async () => {
   try {
-    const response = await api.get('/api/auth/user/');
+    const response = await api.get('/api/profile/');
     return response.data;
   } catch (error) {
     console.error('Get current user error:', error);
@@ -61,7 +61,7 @@ export const getCurrentUser = async () => {
 
 export const refreshToken = async (refresh: string) => {
   try {
-    const response = await api.post('/api/auth/token/refresh/', { refresh });
+    const response = await api.post('/api/token/refresh/', { refresh });
     return response.data;
   } catch (error) {
     console.error('Token refresh error:', error);
@@ -77,7 +77,7 @@ export const updateUserProfile = async (data: Partial<{
   last_name: string;
 }>) => {
   try {
-    const response = await api.patch('/api/auth/user/', data);
+    const response = await api.patch('/api/profile/', data);
     return response.data;
   } catch (error) {
     console.error('Update profile error:', error);
@@ -91,7 +91,7 @@ export const changePassword = async (data: {
   new_password: string;
 }) => {
   try {
-    const response = await api.post('/api/auth/change-password/', data);
+    const response = await api.post('/api/profile/', data);
     return response.data;
   } catch (error) {
     console.error('Change password error:', error);
