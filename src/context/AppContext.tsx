@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { mockProducts } from '../data/mockProducts';
+import { getProducts } from '../services/productServices';
+import type { ProductFilters } from '../services/productServices';
+import { getCart } from '../services/cartServices';
+import { getWishlist } from '../services/wishlistServices';
 import type { AppState, CartItem, FilterState, Product } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -110,7 +113,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
-  fetchProducts: (filters?: any) => Promise<void>;
+  fetchProducts: (filters?: ProductFilters) => Promise<void>;
   fetchCart: () => Promise<void>;
   fetchWishlist: () => Promise<void>;
 } | null>(null);
@@ -120,108 +123,67 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
 
   const fetchProducts = React.useCallback(
-    async (filters: any = {}) => {
+    async (filters: ProductFilters = {}) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        let filteredProducts = [...mockProducts];
-        
-        // Apply search filter
-        if (filters.search) {
-          filteredProducts = filteredProducts.filter(product =>
-            product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-            product.description.toLowerCase().includes(filters.search.toLowerCase())
-          );
-        }
-        
-        // Apply category filter
-        if (filters.category) {
-          filteredProducts = filteredProducts.filter(product =>
-            product.category.toLowerCase() === filters.category.toLowerCase()
-          );
-        }
-        
-        // Apply price range filter
-        if (filters.min_price !== undefined) {
-          filteredProducts = filteredProducts.filter(product =>
-            product.price >= filters.min_price
-          );
-        }
-        
-        if (filters.max_price !== undefined) {
-          filteredProducts = filteredProducts.filter(product =>
-            product.price <= filters.max_price
-          );
-        }
-        
-        // Apply sorting
-        if (filters.ordering) {
-          switch (filters.ordering) {
-            case 'price':
-              filteredProducts.sort((a, b) => a.price - b.price);
-              break;
-            case '-price':
-              filteredProducts.sort((a, b) => b.price - a.price);
-              break;
-            case 'name':
-              filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-              break;
-            case '-name':
-              filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-              break;
-            case '-created_at':
-              // For mock data, we'll just reverse the array
-              filteredProducts.reverse();
-              break;
-            case '-rating':
-              filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-              break;
-          }
-        }
-        
-        // Apply pagination
-        const page = filters.page || 1;
-        const pageSize = state.itemsPerPage;
-        const startIndex = (page - 1) * pageSize;
-        const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
+        // Call the backend API to get products
+        const response = await getProducts({
+          ...filters,
+          page: state.currentPage,
+          page_size: state.itemsPerPage,
+        });
         
         dispatch({
           type: 'SET_PRODUCTS',
           payload: {
-            products: paginatedProducts,
-            total: filteredProducts.length,
+            products: response.results,
+            total: response.count,
           },
         });
       } catch (error) {
         console.error('Error fetching products:', error);
+        // Fallback to empty array if API fails
+        dispatch({
+          type: 'SET_PRODUCTS',
+          payload: {
+            products: [],
+            total: 0,
+          },
+        });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },
-    [state.itemsPerPage, dispatch]
+    [state.currentPage, state.itemsPerPage, dispatch]
   );
 
   const fetchCart = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
-      // Mock cart data - in a real app this would come from an API
-      const mockCartItems: CartItem[] = [];
-      dispatch({ type: 'SET_CART', payload: mockCartItems });
+      // Call the backend API to get cart data
+      const cartData = await getCart();
+      // Transform cart data to match your existing cart structure
+      const cartItems: CartItem[] = cartData.items.map(item => ({
+        product: state.products.find(p => p.id === item.product.toString()) || {} as Product,
+        quantity: item.quantity,
+        selectedSize: item.size,
+        selectedColor: item.color,
+      }));
+      dispatch({ type: 'SET_CART', payload: cartItems });
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated, state.products, dispatch]);
 
   const fetchWishlist = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
-      // Mock wishlist data - in a real app this would come from an API
-      const mockWishlistIds: string[] = [];
-      dispatch({ type: 'SET_WISHLIST', payload: mockWishlistIds });
+      // Call the backend API to get wishlist data
+      const wishlistData = await getWishlist();
+      const wishlistIds = wishlistData.map(item => item.product.toString());
+      dispatch({ type: 'SET_WISHLIST', payload: wishlistIds });
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     }
@@ -240,7 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch products when filters or sorting changes
   useEffect(() => {
-    const filters: any = {
+    const filters: ProductFilters = {
       search: state.filters.searchQuery,
       category: state.filters.categories.length > 0 ? state.filters.categories[0] : undefined,
       min_price: state.filters.priceRange[0],

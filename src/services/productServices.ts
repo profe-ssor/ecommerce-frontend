@@ -1,8 +1,8 @@
 import { api } from './api';
 import type { Product } from '../types';
 
-// Cloudinary configuration
-const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1749684375/ecommerce/';
+// Cloudinary configuration for your specific setup
+const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1/ecommerce/';
 
 export interface ProductFilters {
   search?: string;
@@ -26,19 +26,56 @@ export interface ProductResponse {
   results: Product[];
 }
 
-// Helper function to construct Cloudinary image URLs
+// Helper function to construct Cloudinary image URLs based on category
 export const getCloudinaryImageUrl = (imagePath: string, category?: string): string => {
-  if (!imagePath) return '';
+  console.log('🔍 Processing image:', { imagePath, category });
+  
+  if (!imagePath) {
+    console.log('❌ Empty imagePath, using fallback');
+    // Use your provided fallback image
+    return 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1/ecommerce/kids-baby/photo_2025-03-20_20-20-15_tu3lsb';
+  }
   
   // If it's already a full URL, return as is
-  if (imagePath.startsWith('http')) return imagePath;
+  if (imagePath.startsWith('http')) {
+    console.log('🌐 Already a full URL:', imagePath);
+    return imagePath;
+  }
   
-  // Construct Cloudinary URL with category folder
-  const categoryFolder = category ? `${category.toLowerCase().replace(/\s+/g, '_')}/` : '';
-  return `${CLOUD_BASE_URL}${categoryFolder}${imagePath}`;
+  // Map categories to folder names in Cloudinary
+  const categoryFolderMap: { [key: string]: string } = {
+    'dresses': 'dresses',
+    'women': 'women',
+    'men': 'men',
+    'beauty & accessories': 'beauty-accessories',
+    'kids & baby': 'kids-baby',
+    'home': 'home',
+    'shoes': 'shoes',
+    'accessories': 'accessories',
+    'jewelry': 'jewelry',
+    'handbags': 'handbags',
+    'makeup': 'makeup',
+    'skincare': 'skincare',
+  };
+  
+  // Get the folder name based on category, default to 'general' if not found
+  const categoryKey = category?.toLowerCase();
+  const folderName = categoryKey ? categoryFolderMap[categoryKey] || 'general' : 'general';
+  
+  // Construct the full Cloudinary URL
+  const fullUrl = `${CLOUD_BASE_URL}${folderName}/${imagePath}`;
+  
+  console.log('🎯 Generated Cloudinary URL:', {
+    category,
+    folderName,
+    imagePath,
+    fullUrl
+  });
+  
+  return fullUrl;
 };
 
-// Backend product type definition
+// Backend product type definition (based on your API structure)
 interface BackendProduct {
   id: string | number;
   name: string;
@@ -59,18 +96,26 @@ interface BackendProduct {
   tags?: string[];
 }
 
-// Transform backend product data to frontend format
+// Transform backend product data to frontend format with Cloudinary image URLs
 const transformProduct = (backendProduct: BackendProduct): Product => {
-  return {
+  console.log('🔄 Transforming product:', backendProduct.name);
+  
+  // Process main image
+  const mainImage = getCloudinaryImageUrl(backendProduct.image, backendProduct.category);
+  
+  // Process additional images if they exist
+  const additionalImages = backendProduct.images 
+    ? backendProduct.images.map((img: string) => getCloudinaryImageUrl(img, backendProduct.category))
+    : [mainImage]; // Fallback to main image if no additional images
+  
+  const transformedProduct: Product = {
     id: backendProduct.id.toString(),
     name: backendProduct.name,
     brand: backendProduct.brand || 'Unknown Brand',
     price: parseFloat(backendProduct.price as string),
     compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price as string) : undefined,
-    image: getCloudinaryImageUrl(backendProduct.image, backendProduct.category),
-    images: backendProduct.images ? backendProduct.images.map((img: string) => 
-      getCloudinaryImageUrl(img, backendProduct.category)
-    ) : [getCloudinaryImageUrl(backendProduct.image, backendProduct.category)],
+    image: mainImage,
+    images: additionalImages,
     category: backendProduct.category,
     subcategory: backendProduct.subcategory || '',
     colors: backendProduct.colors || [],
@@ -82,85 +127,128 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
     description: backendProduct.description || '',
     tags: backendProduct.tags || [],
   };
+  
+  console.log('✅ Product transformed:', {
+    name: transformedProduct.name,
+    mainImage: transformedProduct.image,
+    imageCount: transformedProduct.images.length
+  });
+  
+  return transformedProduct;
 };
 
 export const getProducts = async (filters: ProductFilters = {}): Promise<ProductResponse> => {
   try {
+    console.log('📡 Fetching products with filters:', filters);
+    
+    // Build query parameters
     const params = new URLSearchParams();
-
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params.append(key, value.toString());
       }
     });
 
+    console.log('🔗 API call URL:', `/products/api/products/?${params.toString()}`);
+    
     const response = await api.get(`/products/api/products/?${params.toString()}`);
     const data = response.data;
 
+    console.log('📦 Raw API response:', {
+      count: data.count,
+      resultsLength: data.results?.length || 0,
+      hasNext: !!data.next,
+      hasPrevious: !!data.previous
+    });
+
+    // Handle different response formats
     const rawResults = Array.isArray(data.results) ? data.results : Array.isArray(data) ? data : [];
 
-    return {
+    // Transform all products with Cloudinary image URLs
+    const transformedResults = rawResults.map(transformProduct);
+
+    const finalResponse: ProductResponse = {
       count: data.count ?? rawResults.length,
       next: data.next ?? null,
       previous: data.previous ?? null,
-      results: rawResults.map(transformProduct),
+      results: transformedResults,
     };
+
+    console.log('✅ Products fetched successfully:', {
+      totalCount: finalResponse.count,
+      returnedCount: finalResponse.results.length,
+      hasNext: !!finalResponse.next
+    });
+
+    return finalResponse;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ Error fetching products:', error);
     throw error;
   }
 };
 
-
 export const getProduct = async (slug: string): Promise<Product> => {
   try {
+    console.log('📡 Fetching single product:', slug);
+    
     const response = await api.get(`/products/api/products/${slug}/`);
-
-    return transformProduct(response.data);
+    const transformedProduct = transformProduct(response.data);
+    
+    console.log('✅ Product fetched successfully:', transformedProduct.name);
+    
+    return transformedProduct;
   } catch (error) {
-    console.error('Error fetching product:', error);
+    console.error('❌ Error fetching product:', error);
     throw error;
   }
 };
 
 export const getCategories = async () => {
   try {
+    console.log('📡 Fetching categories');
     const response = await api.get('/products/api/categories/');
+    console.log('✅ Categories fetched successfully');
     return response.data;
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('❌ Error fetching categories:', error);
     throw error;
   }
 };
 
 export const getBrands = async () => {
   try {
+    console.log('📡 Fetching brands');
     const response = await api.get('/products/api/brands/');
-
+    console.log('✅ Brands fetched successfully');
     return response.data;
   } catch (error) {
-    console.error('Error fetching brands:', error);
+    console.error('❌ Error fetching brands:', error);
     throw error;
   }
 };
 
 export const getFeaturedProducts = async (): Promise<Product[]> => {
   try {
+    console.log('📡 Fetching featured products');
     const response = await api.get('/products/api/products/?is_featured=true&page_size=8');
-    return response.data.results.map(transformProduct);
+    const transformedProducts = response.data.results.map(transformProduct);
+    console.log('✅ Featured products fetched:', transformedProducts.length);
+    return transformedProducts;
   } catch (error) {
-    console.error('Error fetching featured products:', error);
+    console.error('❌ Error fetching featured products:', error);
     throw error;
   }
 };
 
 export const getNewArrivals = async (): Promise<Product[]> => {
   try {
+    console.log('📡 Fetching new arrivals');
     const response = await api.get('/products/api/products/?is_new=true&page_size=8');
-;
-    return response.data.results.map(transformProduct);
+    const transformedProducts = response.data.results.map(transformProduct);
+    console.log('✅ New arrivals fetched:', transformedProducts.length);
+    return transformedProducts;
   } catch (error) {
-    console.error('Error fetching new arrivals:', error);
+    console.error('❌ Error fetching new arrivals:', error);
     throw error;
   }
 };
@@ -168,11 +256,13 @@ export const getNewArrivals = async (): Promise<Product[]> => {
 // Search products
 export const searchProducts = async (query: string): Promise<Product[]> => {
   try {
+    console.log('📡 Searching products:', query);
     const response = await api.get(`/products/api/products/?search=${encodeURIComponent(query)}`);
-
-    return response.data.results.map(transformProduct);
+    const transformedProducts = response.data.results.map(transformProduct);
+    console.log('✅ Search completed:', transformedProducts.length, 'results');
+    return transformedProducts;
   } catch (error) {
-    console.error('Error searching products:', error);
+    console.error('❌ Error searching products:', error);
     throw error;
   }
 };
