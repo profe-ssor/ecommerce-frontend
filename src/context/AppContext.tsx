@@ -1,8 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { getProducts } from '../services/productServices';
-import type { ProductFilters } from '../services/productServices';
-import { getCart } from '../services/cartServices';
-import { getWishlist } from '../services/wishlistServices';
+import { mockProducts } from '../data/mockProducts';
 import type { AppState, CartItem, FilterState, Product } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -113,7 +110,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
 const AppContext = createContext<{
   state: AppState;
   dispatch: React.Dispatch<AppAction>;
-  fetchProducts: (filters?: ProductFilters) => Promise<void>;
+  fetchProducts: (filters?: any) => Promise<void>;
   fetchCart: () => Promise<void>;
   fetchWishlist: () => Promise<void>;
 } | null>(null);
@@ -123,20 +120,78 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
 
   const fetchProducts = React.useCallback(
-    async (filters: ProductFilters = {}) => {
+    async (filters: any = {}) => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const response = await getProducts({
-          ...filters,
-          page: state.currentPage,
-          page_size: state.itemsPerPage,
-        });
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        let filteredProducts = [...mockProducts];
+        
+        // Apply search filter
+        if (filters.search) {
+          filteredProducts = filteredProducts.filter(product =>
+            product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+            product.description.toLowerCase().includes(filters.search.toLowerCase())
+          );
+        }
+        
+        // Apply category filter
+        if (filters.category) {
+          filteredProducts = filteredProducts.filter(product =>
+            product.category.toLowerCase() === filters.category.toLowerCase()
+          );
+        }
+        
+        // Apply price range filter
+        if (filters.min_price !== undefined) {
+          filteredProducts = filteredProducts.filter(product =>
+            product.price >= filters.min_price
+          );
+        }
+        
+        if (filters.max_price !== undefined) {
+          filteredProducts = filteredProducts.filter(product =>
+            product.price <= filters.max_price
+          );
+        }
+        
+        // Apply sorting
+        if (filters.ordering) {
+          switch (filters.ordering) {
+            case 'price':
+              filteredProducts.sort((a, b) => a.price - b.price);
+              break;
+            case '-price':
+              filteredProducts.sort((a, b) => b.price - a.price);
+              break;
+            case 'name':
+              filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+            case '-name':
+              filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+              break;
+            case '-created_at':
+              // For mock data, we'll just reverse the array
+              filteredProducts.reverse();
+              break;
+            case '-rating':
+              filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+              break;
+          }
+        }
+        
+        // Apply pagination
+        const page = filters.page || 1;
+        const pageSize = state.itemsPerPage;
+        const startIndex = (page - 1) * pageSize;
+        const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
         
         dispatch({
           type: 'SET_PRODUCTS',
           payload: {
-            products: response.results,
-            total: response.count,
+            products: paginatedProducts,
+            total: filteredProducts.length,
           },
         });
       } catch (error) {
@@ -145,34 +200,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },
-    [state.currentPage, state.itemsPerPage, dispatch]
+    [state.itemsPerPage, dispatch]
   );
 
   const fetchCart = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
-      const cartData = await getCart();
-      // Transform cart data to match your existing cart structure
-      const cartItems: CartItem[] = cartData.items.map(item => ({
-        product: state.products.find(p => p.id === item.product.toString()) || {} as Product,
-        quantity: item.quantity,
-        selectedSize: item.size,
-        selectedColor: item.color,
-      }));
-      dispatch({ type: 'SET_CART', payload: cartItems });
+      // Mock cart data - in a real app this would come from an API
+      const mockCartItems: CartItem[] = [];
+      dispatch({ type: 'SET_CART', payload: mockCartItems });
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
-  }, [isAuthenticated, state.products, dispatch]);
+  }, [isAuthenticated, dispatch]);
 
   const fetchWishlist = React.useCallback(async () => {
     if (!isAuthenticated) return;
     
     try {
-      const wishlistData = await getWishlist();
-      const wishlistIds = wishlistData.map(item => item.product.toString());
-      dispatch({ type: 'SET_WISHLIST', payload: wishlistIds });
+      // Mock wishlist data - in a real app this would come from an API
+      const mockWishlistIds: string[] = [];
+      dispatch({ type: 'SET_WISHLIST', payload: mockWishlistIds });
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     }
@@ -191,7 +240,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch products when filters or sorting changes
   useEffect(() => {
-    const filters: ProductFilters = {
+    const filters: any = {
       search: state.filters.searchQuery,
       category: state.filters.categories.length > 0 ? state.filters.categories[0] : undefined,
       min_price: state.filters.priceRange[0],
