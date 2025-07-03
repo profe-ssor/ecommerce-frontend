@@ -27,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
     ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : 0;
 
-  const imageUrl = getProductImageUrl(product.image, product.category, 'medium');
+  const imageUrl = getProductImageUrl(product.image, product.category);
 
   const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();

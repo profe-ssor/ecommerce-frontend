@@ -62,7 +62,7 @@ const CartItemComponent: React.FC<{
   console.log('CartItem:', item);
   console.log('Available Sizes:', availableSizes, 'Available Colors:', availableColors);
   // Debug: log the image URL for this cart item
-  const debugImageUrl = getProductImageUrl(item.product_image, item.product_category || item.category || '', 'medium');
+  const debugImageUrl = getProductImageUrl(item.product_image, item.product_category || item.category || '',);
   console.log('CartItem image URL:', debugImageUrl);
 
   // State for multiple selections
@@ -75,7 +75,7 @@ const CartItemComponent: React.FC<{
   const imageUrl = getProductImageUrl(
     item.product_image,
     item.product_category || item.category || '',
-    'medium'
+    
   );
 
   // Handle size checkbox change

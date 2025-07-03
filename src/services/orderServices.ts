@@ -72,7 +72,7 @@ export const cancelOrder = async (orderId: string): Promise<Order> => {
   }
 };
 
-export const trackOrder = async (trackingNumber: string): Promise<any> => {
+export const trackOrder = async (trackingNumber: string): Promise<Record<string, unknown>> => {
   try {
     const response = await api.get(`/orders/api/orders/track/${trackingNumber}/`);
     return response.data;

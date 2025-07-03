@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, History } from 'lucide-react';
 
@@ -32,15 +32,18 @@ import type { Order } from '../types/order';
 import ShoppingCart from './order/ShoppingCart';
 // Define ShippingAddress type here if not exported from elsewhere
 type ShippingAddress = {
-  street: string;
+  fullName: string;
+  address: string;
   city: string;
   state: string;
-  zip_code: string;
+  zipCode: string;
   country: string;
 };
 // import type { PaymentMethodData } from '../types/order';
 // TODO: Define PaymentMethodData type here or import from the correct module if it exists elsewhere.
-type PaymentMethodData = any; // Replace 'any' with the correct type definition
+type PaymentMethodData =
+  | { id: 'credit'; method: 'credit'; last4: string; brand: string }
+  | { id: 'paypal'; method: 'paypal' };
 
 
 
@@ -107,10 +110,20 @@ export default function StorePage() {
   };
 
   const handlePlaceOrder = async (address: ShippingAddress, paymentMethod: PaymentMethodData) => {
+    // Map frontend address to backend format
+    const backendAddress = {
+      street: address.address,
+      city: address.city,
+      state: address.state,
+      zip_code: address.zipCode,
+      country: address.country,
+    };
+    // Map payment method to string for backend
+    const paymentMethodString = paymentMethod.method;
     const orderData: CreateOrderData = {
-      shipping_address: address,
-      billing_address: address,
-      payment_method: paymentMethod,
+      shipping_address: backendAddress,
+      billing_address: backendAddress,
+      payment_method: paymentMethodString,
     };
     const newOrder = await createOrder(orderData);
     setOrders([newOrder, ...orders]);
