@@ -1,8 +1,6 @@
 import { api } from './api';
 import type { Product } from '../types';
-
-// Cloudinary configuration
-const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1749684375/ecommerce/';
+import { getProductImageUrl } from '../utils/cloudinary';
 
 export interface ProductFilters {
   search?: string;
@@ -25,55 +23,6 @@ export interface ProductResponse {
   previous: string | null;
   results: Product[];
 }
-
-// Helper function to construct Cloudinary image URLs based on category
-export const getCloudinaryImageUrl = (imagePath: string, category?: string): string => {
-  console.log('🔍 Processing image:', { imagePath, category });
-  
-  if (!imagePath) {
-    console.log('❌ Empty imagePath, using fallback');
-    // Use your provided fallback image
-    return 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1/ecommerce/kids-baby/photo_2025-03-20_20-20-15_tu3lsb';
-  }
-  
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http')) {
-    console.log('🌐 Already a full URL:', imagePath);
-    return imagePath;
-  }
-  
-  // Map categories to folder names in Cloudinary
-  const categoryFolderMap: { [key: string]: string } = {
-    'dresses': 'dresses',
-    'women': 'women',
-    'men': 'men',
-    'beauty & accessories': 'beauty-accessories',
-    'kids & baby': 'kids-baby',
-    'home': 'home',
-    'shoes': 'shoes',
-    'accessories': 'accessories',
-    'jewelry': 'jewelry',
-    'handbags': 'handbags',
-    'makeup': 'makeup',
-    'skincare': 'skincare',
-  };
-  
-  // Get the folder name based on category, default to 'general' if not found
-  const categoryKey = category?.toLowerCase();
-  const folderName = categoryKey ? categoryFolderMap[categoryKey] || 'general' : 'general';
-  
-  // Construct the full Cloudinary URL
-  const fullUrl = `${CLOUD_BASE_URL}${folderName}/${imagePath}`;
-  
-  console.log('🎯 Generated Cloudinary URL:', {
-    category,
-    folderName,
-    imagePath,
-    fullUrl
-  });
-  
-  return fullUrl;
-};
 
 // Backend product type definition (based on your API structure)
 interface BackendProduct {
@@ -101,11 +50,11 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
   console.log('🔄 Transforming product:', backendProduct.name);
   
   // Process main image
-  const mainImage = getCloudinaryImageUrl(backendProduct.image, backendProduct.category);
+  const mainImage = getProductImageUrl(backendProduct.image, backendProduct.category);
   
   // Process additional images if they exist
   const additionalImages = backendProduct.images 
-    ? backendProduct.images.map((img: string) => getCloudinaryImageUrl(img, backendProduct.category))
+    ? backendProduct.images.map((img: string) => getProductImageUrl(img, backendProduct.category))
     : [mainImage]; // Fallback to main image if no additional images
   
   const transformedProduct: Product = {
@@ -113,11 +62,9 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
     name: backendProduct.name,
     brand: backendProduct.brand || 'Unknown Brand',
     price: parseFloat(backendProduct.price as string),
-    compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price as string) : undefined,
-    image: getCloudinaryImageUrl(backendProduct.image, backendProduct.category),
-    images: backendProduct.images ? backendProduct.images.map((img: string) => 
-      getCloudinaryImageUrl(img, backendProduct.category)
-    ) : [getCloudinaryImageUrl(backendProduct.image, backendProduct.category)],
+    compare_price: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price as string) : undefined,
+    image: mainImage,
+    images: additionalImages,
     category: backendProduct.category,
     subcategory: backendProduct.subcategory || '',
     colors: backendProduct.colors || [],
@@ -128,9 +75,10 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
     review_count: backendProduct.review_count || 0,
     description: backendProduct.description || '',
     tags: backendProduct.tags || [],
-    color_names: (backendProduct as any).color_names || [],
-    category_names: (backendProduct as any).category_names || [],
-    size_names: (backendProduct as any).size_names || [],
+    color_names: (backendProduct as Partial<Product>)?.color_names || [],
+    category_names: (backendProduct as Partial<Product>)?.category_names || [],
+    size_names: (backendProduct as Partial<Product>)?.size_names || [],
+    stock: (backendProduct as Partial<Product>)?.stock ?? 0,
   };
   
   console.log('✅ Product transformed:', {
@@ -194,8 +142,7 @@ export const getProducts = async (filters: ProductFilters = {}): Promise<Product
 
 export const getProduct = async (id: string | number): Promise<Product> => {
   try {
-    const response = await api.get(`/products/api/products/${slug}/`);
-
+    const response = await api.get(`/products/api/products/${id}/`);
     return transformProduct(response.data);
   } catch (error) {
     console.error('❌ Error fetching product:', error);
