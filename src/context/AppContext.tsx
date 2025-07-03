@@ -23,7 +23,7 @@ const initialState: AppState = {
   products: [],
   filteredProducts: [],
   filters: {
-    categories: [],
+    category: [],
     sizes: [],
     colors: [],
     priceRange: [0, 1000],
@@ -164,17 +164,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Call the backend API to get cart data
       const cartData = await getCart();
       // Transform cart data to match your existing cart structure
-      const cartItems: CartItem[] = cartData.items.map(item => ({
-        product: state.products.find(p => p.id === item.product.toString()) || {} as Product,
-        quantity: item.quantity,
-        selectedSize: item.size,
-        selectedColor: item.color,
-      }));
+const cartItems: CartItem[] = cartData.items.map(item => ({
+  id: item.id, // Ensure this matches the unique identifier for the cart item
+  product: {
+    id: item.product.toString(),
+    name: item.product_name,
+    price: item.product_price,
+    image: item.product_image,
+    brand: '',
+    brand_name: '',
+    category: '',
+    subcategory: '',
+    category_names: [],
+    color_names: [],
+    size_names: [],
+    colors: [],
+    sizes: [],
+    compare_price: 0,
+    description: '',
+    images: [item.product_image],
+    is_featured: false,
+    is_new: false,
+    rating: 0,
+    review_count: 0,
+    tags: [],
+  },
+  quantity: item.quantity,
+  selectedSize: item.selected_size,
+  selectedColor: item.selected_color,
+}));
+
       dispatch({ type: 'SET_CART', payload: cartItems });
     } catch (error) {
       console.error('Error fetching cart:', error);
     }
-  }, [isAuthenticated, state.products, dispatch]);
+  }, [isAuthenticated, dispatch]);
 
   const fetchWishlist = React.useCallback(async () => {
     if (!isAuthenticated) return;
@@ -191,7 +215,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -204,7 +228,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const filters: ProductFilters = {
       search: state.filters.searchQuery,
-      category: state.filters.categories.length > 0 ? state.filters.categories[0] : undefined,
+      category: state.filters.category.length > 0 ? state.filters.category[0] : undefined,
       min_price: state.filters.priceRange[0],
       max_price: state.filters.priceRange[1],
       ordering: state.sortBy === 'price-low-high' ? 'price' : 
@@ -226,7 +250,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useApp() {
+export function useApp() {  
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useApp must be used within an AppProvider');

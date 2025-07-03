@@ -1,3 +1,4 @@
+import type { Order } from '../types/order';
 import { api } from './api';
 
 export interface OrderItem {
@@ -15,32 +16,7 @@ export interface OrderItem {
   price: number;
 }
 
-export interface Order {
-  id: string;
-  order_number: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  items: OrderItem[];
-  total_amount: number;
-  shipping_address: {
-    street: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    country: string;
-  };
-  billing_address: {
-    street: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    country: string;
-  };
-  payment_method: string;
-  created_at: string;
-  updated_at: string;
-  estimated_delivery?: string;
-  tracking_number?: string;
-}
+
 
 export interface CreateOrderData {
   shipping_address: {
@@ -62,33 +38,18 @@ export interface CreateOrderData {
 }
 
 export const getOrders = async (): Promise<Order[]> => {
-  try {
-    const response = await api.get('/orders/api/orders/');
-    return response.data.results || response.data;
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-    throw error;
-  }
+  const response = await api.get('/orders/api/orders/');
+  return response.data.results || response.data;
 };
 
 export const getOrder = async (orderId: string): Promise<Order> => {
-  try {
-    const response = await api.get(`/orders/api/orders/${orderId}/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching order:', error);
-    throw error;
-  }
+  const response = await api.get(`/orders/api/orders/${orderId}/`);
+  return response.data;
 };
 
 export const createOrder = async (orderData: CreateOrderData): Promise<Order> => {
-  try {
-    const response = await api.post('/orders/api/orders/place/', orderData);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating order:', error);
-    throw error;
-  }
+  const response = await api.post('/orders/api/orders/place/', orderData);
+  return response.data;
 };
 
 export const updateOrderStatus = async (orderId: string, status: string): Promise<Order> => {

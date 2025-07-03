@@ -1,29 +1,5 @@
+import type { CartItem, CartResponse } from '../types/cart';
 import { api } from './api';
-
-export interface CartItem {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image: string;
-    brand: string;
-  };
-  quantity: number;
-  size?: string;
-  color?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CartResponse {
-  id: string;
-  items: CartItem[];
-  total_items: number;
-  total_price: string;
-  created_at: string;
-  updated_at: string;
-}
 
 export const getCart = async (): Promise<CartResponse> => {
   try {
@@ -36,9 +12,9 @@ export const getCart = async (): Promise<CartResponse> => {
 };
 
 export const addToCart = async (
-  productId: number, 
-  quantity: number = 1, 
-  size?: string, 
+  productId: number,
+  quantity: number = 1,
+  size?: string,
   color?: string
 ): Promise<CartItem> => {
   try {
@@ -55,10 +31,17 @@ export const addToCart = async (
   }
 };
 
-export const updateCartItem = async (itemId: string, quantity: number): Promise<CartItem> => {
+export const updateCartItem = async (
+  itemId: string,
+  quantity: number,
+  selected_size?: string,
+  selected_color?: string
+): Promise<CartItem> => {
   try {
-    const response = await api.patch(`/orders/api/cart/items/${itemId}/`, {
+    const response = await api.put(`/orders/api/cart/items/${itemId}/`, {
       quantity,
+      selected_size,
+      selected_color,
     });
     return response.data;
   } catch (error) {

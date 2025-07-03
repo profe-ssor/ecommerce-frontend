@@ -1,69 +1,75 @@
 import { useMemo } from 'react';
 import type { FilterState, Product } from '../types';
 
-
 export function useProductFiltering(products: Product[], filters: FilterState, sortBy: string) {
   const filteredAndSortedProducts = useMemo(() => {
     const filtered = products.filter(product => {
-      // Search query filter
+      const query = filters.searchQuery.toLowerCase();
+
+      // 🔍 Search
       if (filters.searchQuery) {
-        const query = filters.searchQuery.toLowerCase();
-        const searchMatch = 
+        const match =
           product.name.toLowerCase().includes(query) ||
-          product.brand.toLowerCase().includes(query) ||
-          product.description.toLowerCase().includes(query) ||
+          product.brand_name?.toLowerCase().includes(query) || // ✅ brand_name
+          product.description?.toLowerCase().includes(query) ||
           product.tags.some(tag => tag.toLowerCase().includes(query));
-        
-        if (!searchMatch) return false;
+        if (!match) return false;
       }
 
-      // Category filter
-      if (filters.categories.length > 0) {
-        if (!filters.categories.includes(product.category)) return false;
+      // ✅ Category filter
+      if (filters.category.length > 0) {
+        const match = filters.category.some(cat =>
+          product.category_names?.includes(cat)
+        );
+        if (!match) return false;
       }
 
-      // Size filter
+      // ✅ Sizes filter
       if (filters.sizes.length > 0) {
-        const hasMatchingSize = filters.sizes.some(size => product.sizes.includes(size));
-        if (!hasMatchingSize) return false;
+        const match = filters.sizes.some(size =>
+          product.size_names?.includes(size)
+        );
+        if (!match) return false;
       }
 
-      // Color filter
+      // ✅ Colors filter
       if (filters.colors.length > 0) {
-        const hasMatchingColor = filters.colors.some(color => 
-          product.colors.some(productColor => 
-            productColor.toLowerCase().includes(color.toLowerCase())
+        const match = filters.colors.some(filterColor =>
+          product.color_names?.some(prodColor =>
+            prodColor.toLowerCase().trim() === filterColor.toLowerCase().trim()
           )
         );
-        if (!hasMatchingColor) return false;
+        if (!match) return false;
       }
 
-      // Price range filter
+      // ✅ Brands filter
+      if (filters.brands.length > 0) {
+        const brandName = product.brand_name?.toLowerCase().trim();
+        const match = filters.brands.some(filterBrand =>
+          filterBrand.toLowerCase().trim() === brandName
+        );
+        if (!match) return false;
+      }
+
+      // ✅ Price Range
       if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
         return false;
-      }
-
-      // Brand filter
-      if (filters.brands.length > 0) {
-        if (!filters.brands.includes(product.brand)) return false;
       }
 
       return true;
     });
 
-    // Sort products
+    // 🧠 Sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'featured':
-          if (a.isFeatured && !b.isFeatured) return -1;
-          if (!a.isFeatured && b.isFeatured) return 1;
           return b.rating - a.rating;
         case 'price-low-high':
           return a.price - b.price;
         case 'price-high-low':
           return b.price - a.price;
         case 'newest':
-          return a.isNew && !b.isNew ? -1 : !a.isNew && b.isNew ? 1 : 0;
+          return a.is_new && !b.is_new ? -1 : !a.is_new && b.is_new ? 1 : 0;
         case 'rating':
           return b.rating - a.rating;
         case 'name-a-z':

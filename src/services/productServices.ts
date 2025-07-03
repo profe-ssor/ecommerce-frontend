@@ -1,8 +1,8 @@
 import { api } from './api';
 import type { Product } from '../types';
 
-// Cloudinary configuration for your specific setup
-const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1/ecommerce/';
+// Cloudinary configuration
+const CLOUD_BASE_URL = 'https://res.cloudinary.com/dhicyzdr5/image/upload/v1749684375/ecommerce/';
 
 export interface ProductFilters {
   search?: string;
@@ -114,18 +114,23 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
     brand: backendProduct.brand || 'Unknown Brand',
     price: parseFloat(backendProduct.price as string),
     compareAtPrice: backendProduct.compare_at_price ? parseFloat(backendProduct.compare_at_price as string) : undefined,
-    image: mainImage,
-    images: additionalImages,
+    image: getCloudinaryImageUrl(backendProduct.image, backendProduct.category),
+    images: backendProduct.images ? backendProduct.images.map((img: string) => 
+      getCloudinaryImageUrl(img, backendProduct.category)
+    ) : [getCloudinaryImageUrl(backendProduct.image, backendProduct.category)],
     category: backendProduct.category,
     subcategory: backendProduct.subcategory || '',
     colors: backendProduct.colors || [],
     sizes: backendProduct.sizes || [],
-    isNew: backendProduct.is_new || false,
-    isFeatured: backendProduct.is_featured || false,
+    is_new: backendProduct.is_new || false,
+    is_featured: backendProduct.is_featured || false,
     rating: backendProduct.rating || 4.0,
-    reviewCount: backendProduct.review_count || 0,
+    review_count: backendProduct.review_count || 0,
     description: backendProduct.description || '',
     tags: backendProduct.tags || [],
+    color_names: (backendProduct as any).color_names || [],
+    category_names: (backendProduct as any).category_names || [],
+    size_names: (backendProduct as any).size_names || [],
   };
   
   console.log('✅ Product transformed:', {
@@ -187,16 +192,11 @@ export const getProducts = async (filters: ProductFilters = {}): Promise<Product
   }
 };
 
-export const getProduct = async (slug: string): Promise<Product> => {
+export const getProduct = async (id: string | number): Promise<Product> => {
   try {
-    console.log('📡 Fetching single product:', slug);
-    
     const response = await api.get(`/products/api/products/${slug}/`);
-    const transformedProduct = transformProduct(response.data);
-    
-    console.log('✅ Product fetched successfully:', transformedProduct.name);
-    
-    return transformedProduct;
+
+    return transformProduct(response.data);
   } catch (error) {
     console.error('❌ Error fetching product:', error);
     throw error;
@@ -244,9 +244,8 @@ export const getNewArrivals = async (): Promise<Product[]> => {
   try {
     console.log('📡 Fetching new arrivals');
     const response = await api.get('/products/api/products/?is_new=true&page_size=8');
-    const transformedProducts = response.data.results.map(transformProduct);
-    console.log('✅ New arrivals fetched:', transformedProducts.length);
-    return transformedProducts;
+;
+    return response.data.results.map(transformProduct);
   } catch (error) {
     console.error('❌ Error fetching new arrivals:', error);
     throw error;

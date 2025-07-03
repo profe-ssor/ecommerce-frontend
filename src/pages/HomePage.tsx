@@ -1,24 +1,11 @@
 
-import images from "../assets/images/images";
 import CategoryNavigation from "../components/CategoryNavigation";
 import FeaturedCollections from "../components/FeaturedCollections";
 import HeroSection from "../components/HeroSection";
-import NewArrivalsSlider from "../components/NewArivalsSlider";
+
 import ProductCarousel from "../components/ProductCarousel";
 import PromotionalBanners from "../components/PromotionalBanners";
 
-const featuredCategories = [
-  { id: 1, name: "Men's Clothing", img: images.men },
-  { id: 2, name: "Women's Clothing", img: images.women },
-  { id: 3, name: "Accessories", img: images.kids },
-];
-
-const bestSellers = [
-  { id: 1, name: "Classic White Shirt", price: "$29.99", img: images.men },
-  { id: 2, name: "Leather Wallet", price: "$49.99", img: images.kids },
-  { id: 3, name: "Stylish Sunglasses", price: "$19.99", img: images.kids },
-  { id: 4, name: "Running Shoes", price: "$69.99", img: images.shoes },
-];
 
 
 

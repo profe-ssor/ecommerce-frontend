@@ -1,36 +1,57 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const CategoryNavigation: React.FC = () => {
   const categories = [
     {
-      title: 'New Dresses Now',
+      title: 'Women',
+      subtitle: 'Latest trends for her',
+      buttonText: 'Shop Women',
+      image: 'https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg',
+      gradient: 'from-pink-500 to-rose-500',
+      link: '/women',
+    },
+    {
+      title: 'Dresses',
       subtitle: 'Fresh arrivals daily',
       buttonText: 'Shop Dresses',
       image: 'https://images.pexels.com/photos/1536619/pexels-photo-1536619.jpeg',
-      gradient: 'from-pink-500 to-rose-500'
+      gradient: 'from-pink-500 to-rose-500',
+      link: '/dresses',
     },
     {
-      title: 'Designer Shoes',
-      subtitle: 'Step up your style',
-      buttonText: 'Shop Footwear',
+      title: 'Men',
+      subtitle: 'Essentials for him',
+      buttonText: 'Shop Men',
       image: 'https://images.pexels.com/photos/2048548/pexels-photo-2048548.jpeg',
-      gradient: 'from-purple-500 to-indigo-500'
+      gradient: 'from-purple-500 to-indigo-500',
+      link: '/men',
     },
     {
-      title: 'Handbags & Accessories',
+      title: 'Kids & Baby',
+      subtitle: 'Adorable styles for little ones',
+      buttonText: 'Shop Kids & Baby',
+      image: 'https://images.pexels.com/photos/1090638/pexels-photo-1090638.jpeg',
+      gradient: 'from-teal-500 to-cyan-500',
+      link: '/kids-baby',
+    },
+    {
+      title: 'Accessories',
       subtitle: 'Complete your look',
       buttonText: 'Shop Accessories',
       image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg',
-      gradient: 'from-amber-500 to-orange-500'
+      gradient: 'from-amber-500 to-orange-500',
+      link: '/accessories',
     },
     {
-      title: 'Home Décor',
+      title: 'Home',
       subtitle: 'Transform your space',
       buttonText: 'Shop Home',
       image: 'https://images.pexels.com/photos/1090638/pexels-photo-1090638.jpeg',
-      gradient: 'from-teal-500 to-cyan-500'
-    }
+      gradient: 'from-teal-500 to-cyan-500',
+      link: '/home',
+    },
   ];
 
   return (
@@ -49,9 +70,10 @@ const CategoryNavigation: React.FC = () => {
         {/* Category Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((category, index) => (
-            <div
+            <Link
+              to={category.link}
               key={index}
-              className="relative group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300"
+              className="relative group cursor-pointer overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               {/* Background Image */}
               <div className="relative h-64 overflow-hidden">
@@ -68,17 +90,16 @@ const CategoryNavigation: React.FC = () => {
                 <div className="space-y-3">
                   <h3 className="text-xl font-bold">{category.title}</h3>
                   <p className="text-sm opacity-90">{category.subtitle}</p>
-                  
-                  <button className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-30 transition-all group-hover:translate-x-1">
+                  <span className="inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-opacity-30 transition-all group-hover:translate-x-1">
                     {category.buttonText}
                     <ArrowRight size={16} />
-                  </button>
+                  </span>
                 </div>
               </div>
 
               {/* Hover Effect */}
               <div className="absolute inset-0 border-2 border-transparent group-hover:border-white group-hover:border-opacity-50 rounded-2xl transition-all duration-300"></div>
-            </div>
+            </Link>
           ))}
         </div>
 

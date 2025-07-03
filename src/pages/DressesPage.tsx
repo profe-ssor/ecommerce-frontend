@@ -12,101 +12,74 @@ export function DressesPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Filter products to show only dresses
-  const dressProducts = state.products.filter(product => 
-    product.category === 'Dresses' || 
-    product.subcategory?.toLowerCase().includes('dress')
+  // Filter products where category or tags include 'dresses'
+  const dresses = state.products.filter(product =>
+    product.category?.toLowerCase() === 'dresses' ||
+    product.category_names?.some(cat => cat.toLowerCase() === 'dresses') ||
+    product.subcategory?.toLowerCase().includes('dress') ||
+    product.tags.some(tag => tag.toLowerCase().includes('dress'))
   );
 
-  const filteredProducts = useProductFiltering(dressProducts, state.filters, state.sortBy);
-  
-  // Pagination
+  const filteredProducts = useProductFiltering(dresses, state.filters, state.sortBy);
+
   const startIndex = (state.currentPage - 1) * state.itemsPerPage;
   const endIndex = startIndex + state.itemsPerPage;
   const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
-  // Close mobile filter on resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setIsFilterOpen(false);
       }
     };
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return (
     <main className="container mx-auto px-4 py-8">
-      {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Women's Dresses</h1>
         <p className="text-gray-600">Elegant dresses for every occasion - from casual to formal</p>
       </div>
 
       <div className="flex gap-8">
-        {/* Sidebar */}
-        <FilterSidebar 
-          isOpen={isFilterOpen} 
+        <FilterSidebar
+          isOpen={isFilterOpen}
           onToggle={() => setIsFilterOpen(!isFilterOpen)}
           categoryFilter="Dresses"
         />
 
-        {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* Controls Bar */}
           <div className="flex items-center justify-between mb-6 gap-4">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setIsFilterOpen(true)}
-                className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
                 <Filter size={16} />
                 <span>Filters</span>
               </button>
-              
+
               <div className="text-sm text-gray-600">
                 {filteredProducts.length} dress{filteredProducts.length !== 1 ? 'es' : ''} found
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
-              {/* View Mode Toggle */}
               <div className="hidden sm:flex items-center space-x-1 bg-white border border-gray-300 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded ${
-                    viewMode === 'grid' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
+                <button onClick={() => setViewMode('grid')} className={`p-2 rounded ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-gray-600'}`}>
                   <Grid size={16} />
                 </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 rounded ${
-                    viewMode === 'list' 
-                      ? 'bg-primary text-white' 
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
+                <button onClick={() => setViewMode('list')} className={`p-2 rounded ${viewMode === 'list' ? 'bg-primary text-white' : 'text-gray-600'}`}>
                   <List size={16} />
                 </button>
               </div>
-
               <SortControls />
             </div>
           </div>
 
-          {/* Product Grid */}
-          <ProductGrid 
-            products={paginatedProducts} 
-            isLoading={state.isLoading} 
-          />
-
-          {/* Pagination */}
+          <ProductGrid products={paginatedProducts} isLoading={state.isLoading} />
           <Pagination totalItems={filteredProducts.length} />
         </div>
       </div>

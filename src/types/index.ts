@@ -2,24 +2,29 @@ export interface Product {
   id: string;
   name: string;
   brand: string;
+  brand_name?: string;
+  category_names: string[];
   price: number;
-  compareAtPrice?: number;
+  compare_price?: number;
   image: string;
   images: string[];
+  color_names: string[];
+  size_names: string[];
   category: string;
   subcategory: string;
   colors: string[];
   sizes: string[];
-  isNew: boolean;
-  isFeatured: boolean;
+  is_new: boolean;
+  is_featured: boolean;
   rating: number;
-  reviewCount: number;
+  review_count: number;
   description: string;
   tags: string[];
+  stock: number;
 }
 
 export interface FilterState {
-  categories: string[];
+  category: string[];
   sizes: string[];
   colors: string[];
   priceRange: [number, number];
@@ -33,10 +38,18 @@ export interface SortOption {
 }
 
 export interface CartItem {
+  id: number;
   product: Product;
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
+  product_name: string;
+  product_price: number | string;
+  product_image: string;
+  total_price: number | string;
+  added_at: string;
+  selected_size?: string;
+  selected_color?: string;
 }
 
 export interface AppState {

@@ -26,6 +26,7 @@ const Header = () => {
     { name: "Dresses", path: "/dresses" },
     { name: "Women", path: "/women" },
     { name: "Men", path: "/men" },
+    { name: "African Ware", path: "/african" },
     { name: "Beauty & Accessories", path: "/beauty-accessories" },
     { name: "Kids & Baby", path: "/kids-baby" },
     { name: "Home", path: "/home" },
@@ -81,15 +82,16 @@ const Header = () => {
             </button>
 
             {/* Cart */}
-            <button className="btn capitalize relative">
-              <ShoppingCart />
-              cart
-              {state.cart.length > 0 && (
-                <div className="badge badge-sm bg-[#029fae] absolute -top-1 -right-2">
-                  {state.cart.length}
-                </div>
-              )}
-            </button>
+           <Link to="/store/cart" className="btn capitalize relative">
+  <ShoppingCart />
+  cart
+  {state.cart.length > 0 && (
+    <div className="badge badge-sm bg-[#029fae] absolute -top-1 -right-2">
+      {state.cart.length}
+    </div>
+  )}
+</Link>
+
 
             {/* Wishlist */}
             <button className="btn capitalize relative">

@@ -1,4 +1,5 @@
 const CLOUD_NAME = 'dhicyzdr5';
+<<<<<<< HEAD
 const VERSION = 'v1';
 const ROOT_FOLDER = 'ecommerce';
 const CLOUD_BASE_URL = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload`;
@@ -81,6 +82,8 @@ export const getCloudinaryImageUrl = (
   console.log('🎯 Final Cloudinary URL:', finalUrl);
   return finalUrl;
 };
+=======
+>>>>>>> 86e80f2 (Stating Hosting)
 
 /**
  * Get product image URL with size optimization
@@ -96,17 +99,79 @@ export const getProductImageUrl = (
 ): string => {
   console.log('🖼️ Product image URL generation:', { imagePath, category, size });
   
+<<<<<<< HEAD
   // Define transformation presets for different sizes
+=======
+  if (!imagePath) {
+    console.log('❌ Empty imagePath, returning empty string');
+    return '';
+  }
+  
+  // If it's already a full URL from Django, handle transformations
+  if (imagePath.startsWith('http://res.cloudinary.com/') || 
+      imagePath.startsWith('https://res.cloudinary.com/')) {
+    console.log('🌐 Already a full URL from Django:', imagePath);
+    
+    // For original size, return as-is
+    if (size === 'original') {
+      return imagePath;
+    }
+    
+    // Add transformations
+    const transformations = {
+      thumbnail: 'w_200,h_200,c_fill,q_auto,f_auto',
+      medium: 'w_400,h_400,c_fill,q_auto,f_auto',
+      large: 'w_800,h_800,c_fill,q_auto,f_auto',
+    };
+    
+    const transform = transformations[size as keyof typeof transformations];
+    if (!transform) {
+      return imagePath;
+    }
+    
+    // Insert transformations into the URL
+    const urlParts = imagePath.split('/upload/');
+    if (urlParts.length === 2) {
+      const baseUrl = urlParts[0] + '/upload/';
+      const pathWithVersion = urlParts[1];
+      const transformedUrl = `${baseUrl}${transform}/${pathWithVersion}`;
+      console.log('🔧 Added transformations:', transformedUrl);
+      return transformedUrl;
+    }
+    
+    // If we can't parse, return original
+    return imagePath;
+  }
+  
+  // If it's a public_id, build the URL
+  console.log('🔨 Building URL from public_id:', imagePath);
+  const baseUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/`;
+  
+  if (size === 'original') {
+    return `${baseUrl}${imagePath}`;
+  }
+  
+>>>>>>> 86e80f2 (Stating Hosting)
   const transformations = {
     thumbnail: 'w_200,h_200,c_fill,q_auto,f_auto',
     medium: 'w_400,h_400,c_fill,q_auto,f_auto',
     large: 'w_800,h_800,c_fill,q_auto,f_auto',
-    original: 'q_auto,f_auto',
   };
-
-  return getCloudinaryImageUrl(imagePath, category, transformations[size]);
+  
+  const transform = transformations[size as keyof typeof transformations];
+  
+  // Insert /v1/ after /upload/ if not present
+  let pathWithVersion = imagePath;
+  if (!imagePath.startsWith('v') && !imagePath.includes('/v')) {
+    pathWithVersion = `v1/${imagePath}`;
+  }
+  
+  const finalUrl = `${baseUrl}${transform}/${pathWithVersion}`;
+  console.log('🎯 Built URL:', finalUrl);
+  return finalUrl;
 };
 
+<<<<<<< HEAD
 /**
  * Get optimized image URL with custom parameters
  * @param imagePath - The image filename or path
@@ -144,6 +209,11 @@ export const getOptimizedImageUrl = (
   transforms.push(`f_${format}`);
 
   return getCloudinaryImageUrl(imagePath, category, transforms.join(','));
+=======
+// Even simpler - just return what Django gives you
+export const getSimpleImageUrl = (imagePath: string): string => {
+  return imagePath || '';
+>>>>>>> 86e80f2 (Stating Hosting)
 };
 
 /**
@@ -180,9 +250,6 @@ export const getOptimizedImageUrl = (
  */
 
 export default {
-  getCloudinaryImageUrl,
   getProductImageUrl,
-  getOptimizedImageUrl,
-  CLOUD_BASE_URL,
-  CATEGORY_FOLDERS,
+  getSimpleImageUrl,
 };

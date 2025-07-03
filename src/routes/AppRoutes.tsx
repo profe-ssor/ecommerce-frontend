@@ -12,6 +12,8 @@ import { MenPage } from '../pages/MenPage';
 import { BeautyAccessoriesPage } from '../pages/BeautyAccessoriesPage';
 import { KidsBabyPage } from '../pages/KidsBabyPage';
 import { ClearancePage } from '../pages/ClearancePage';
+import { AfricanWare } from '../pages/AfricanWare';
+import StorePage from '../pages/StorePage';
 
 export default function AppRoutes() {
   return (
@@ -32,59 +34,80 @@ export default function AppRoutes() {
           </MainLayout>
         }
       />
+      <Route path="/login" element={<LoginPage />} />
       <Route
-        path="/login"
+        path="/new-arrivals"
         element={
-         
-            <LoginPage />
-          
+          <MainLayout>
+            <NewArrivalsPage />
+          </MainLayout>
         }
       />
-
-      <Route path="/" element={
-         <MainLayout>
-        <NewArrivalsPage />
-        </MainLayout>
-        } />
-          <Route path="/new-arrivals" element={
-             <MainLayout>
-            <NewArrivalsPage />
-            </MainLayout>
-            } />
-          <Route path="/dresses" element={
-            <MainLayout>
+      <Route
+        path="/dresses"
+        element={
+          <MainLayout>
             <DressesPage />
-            </MainLayout>
-            } />
-          <Route path="/women" element={
-            <MainLayout>
-              <WomenPage />
-            </MainLayout>
-              } />
-          <Route path="/men" element={
-           <MainLayout>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/women"
+        element={
+          <MainLayout>
+            <WomenPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/men"
+        element={
+          <MainLayout>
             <MenPage />
-            </MainLayout>
-            } />
-          <Route path="/beauty-accessories" element={
-            <MainLayout>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/beauty-accessories"
+        element={
+          <MainLayout>
             <BeautyAccessoriesPage />
-            </MainLayout>
-            } />
-          <Route path="/kids-baby" element={
-             <MainLayout>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/kids-baby"
+        element={
+          <MainLayout>
             <KidsBabyPage />
-            </MainLayout>
-            } />
-          <Route path="/home" element={
-            <MainLayout>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/home"
+        element={
+          <MainLayout>
             <HomePage />
-            </MainLayout>
-            } />
-          <Route path="/clearance" element={
-            <MainLayout>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/african"
+        element={
+          <MainLayout>
+            <AfricanWare />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/clearance"
+        element={
+          <MainLayout>
             <ClearancePage />
-            </MainLayout>} />
+          </MainLayout>
+        }
+      />
+      <Route path="/store/*" element={<StorePage />} />
     </Routes>
   );
 }

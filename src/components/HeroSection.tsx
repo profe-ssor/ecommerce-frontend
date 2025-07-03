@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const HeroSection: React.FC = () => {
   return (
@@ -30,14 +31,42 @@ const HeroSection: React.FC = () => {
 
             {/* Category Buttons */}
             <div className="flex flex-wrap gap-3">
-              {['Women', 'Dresses', 'Men', 'Kids & Baby', 'Accessories', 'Home'].map((category) => (
-                <button
-                  key={category}
-                  className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
-                >
-                  {category}
-                </button>
-              ))}
+              <Link
+                to="/women"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Women
+              </Link>
+              <Link
+                to="/dresses"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Dresses
+              </Link>
+              <Link
+                to="/men"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Men
+              </Link>
+              <Link
+                to="/kids-baby"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Kids & Baby
+              </Link>
+              <Link
+                to="/beauty-accessories"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Accessories
+              </Link>
+              <Link
+                to="/home"
+                className="bg-white border-2 border-gray-200 text-gray-700 px-6 py-3 rounded-full font-medium hover:border-red-600 hover:text-red-600 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
+              >
+                Home
+              </Link>
             </div>
 
             {/* CTA Button */}

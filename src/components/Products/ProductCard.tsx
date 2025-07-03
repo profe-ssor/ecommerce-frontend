@@ -7,7 +7,9 @@ import { addToCart } from '../../services/cartServices';
 import { addToWishlist, removeFromWishlist } from '../../services/wishlistServices';
 import { getProductImageUrl } from '../../utils/cloudinary';
 import { toast } from 'react-toastify';
+
 import type { Product } from '../../types';
+import { getColorHex } from '../../utils/colorMap';
 
 interface ProductCardProps {
   product: Product;
@@ -21,8 +23,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const isInWishlist = state.wishlist.includes(product.id);
-  const discountPercentage = product.compareAtPrice 
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+  const discountPercentage = product.compare_price 
+    ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : 0;
 
   const imageUrl = getProductImageUrl(product.image, product.category, 'medium');
@@ -93,7 +95,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col space-y-1">
-          {product.isNew && (
+          {product.is_new && (
             <span className="bg-primary text-white text-xs font-medium px-2 py-1 rounded">NEW</span>
           )}
           {discountPercentage > 0 && (
@@ -134,12 +136,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Product Info */}
       <div className="p-4">
-        <div className="mb-2">
-          <p className="text-sm text-gray-600 mb-1">{product.brand}</p>
-          <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
-            {product.name}
-          </h3>
-        </div>
+      <div className="mb-2 space-y-1">
+  {product.subcategory && (
+    <p className="text-sm text-gray-600">{product.subcategory}</p>
+  )}
+  <h3 className="font-medium text-gray-900 line-clamp-2 group-hover:text-primary transition-colors">
+    {product.name}
+  </h3>
+</div>
+
 
         {/* Rating */}
         <div className="flex items-center space-x-1 mb-2">
@@ -156,7 +161,7 @@ export function ProductCard({ product }: ProductCardProps) {
               />
             ))}
           </div>
-          <span className="text-xs text-gray-600">({product.reviewCount})</span>
+          <span className="text-xs text-gray-600">({product.review_count})</span>
         </div>
 
         {/* Price */}
@@ -164,9 +169,9 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-lg font-semibold text-gray-900">
             ${product.price.toFixed(2)}
           </span>
-          {product.compareAtPrice && (
+          {product.compare_price && (
             <span className="text-sm text-gray-500 line-through">
-              ${product.compareAtPrice.toFixed(2)}
+              ${product.compare_price.toFixed(2)}
             </span>
           )}
         </div>
@@ -178,28 +183,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <div
                 key={index}
                 className="w-4 h-4 rounded-full border border-gray-300"
-                style={{
-                  backgroundColor:
-                    color.toLowerCase() === 'white'
-                      ? '#ffffff'
-                      : color.toLowerCase() === 'black'
-                      ? '#000000'
-                      : color.toLowerCase() === 'gray'
-                      ? '#6b7280'
-                      : color.toLowerCase() === 'navy'
-                      ? '#1e3a8a'
-                      : color.toLowerCase() === 'brown'
-                      ? '#92400e'
-                      : color.toLowerCase() === 'pink'
-                      ? '#ec4899'
-                      : color.toLowerCase() === 'blue'
-                      ? '#3b82f6'
-                      : color.toLowerCase() === 'red'
-                      ? '#ef4444'
-                      : color.toLowerCase() === 'green'
-                      ? '#10b981'
-                      : '#d1d5db',
-                }}
+                style={{ backgroundColor: getColorHex(color) }}
                 title={color}
               />
             ))}
