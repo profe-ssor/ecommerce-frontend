@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2, X, CreditCard } from 'lucide-react';
 import type { Product } from '../../types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { getProductImageUrl } from '../../utils/cloudinary';
+import { initializePaystackPayment, testProxyConnection } from '../../services/paystackService';
 
 export interface CartItem {
   id: number;
@@ -260,6 +261,9 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
   // State for delete modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<CartItem | null>(null);
+  
+  // State for Paystack checkout
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const handleDeleteClick = (item: CartItem) => {
     setItemToDelete(item);
@@ -277,6 +281,69 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
   const handleCancelDelete = () => {
     setDeleteModalOpen(false);
     setItemToDelete(null);
+  };
+
+  const handlePaystackCheckout = async () => {
+    if (safeItems.length === 0) return;
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      // Test proxy connection first
+      await testProxyConnection();
+      
+      // Generate unique reference
+      const reference = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      // Prepare payment data
+      const paymentData = {
+        email: 'customer@example.com', // You can get this from user context
+        amount: parseFloat(safeTotal.toFixed(2)), // Amount in decimal format
+        currency: 'NGN',
+        payment_method: 'card',
+        customer_name: 'Customer Name', // You can get this from user context
+        customer_phone: '', // Optional
+        customer_country: 'NG',
+        mobile_money_provider: '', // Optional
+        mobile_money_number: '', // Optional
+        bank_code: '', // Optional
+        callback_url: `${window.location.origin}/store/payment/callback?reference=${reference}`,
+        metadata: {
+          reference: reference,
+          cart_items: safeItems.map(item => ({
+            id: item.id,
+            name: item.product_name,
+            quantity: item.quantity,
+            price: item.product_price
+          })),
+          total_amount: safeTotal
+        }
+      };
+      
+      console.log('Initializing Paystack payment with data:', paymentData);
+      
+      // Initialize Paystack payment
+      const response = await initializePaystackPayment(paymentData);
+      
+      console.log('Paystack response:', response);
+      
+      if (response.status && response.data.authorization_url) {
+        console.log('Redirecting to:', response.data.authorization_url);
+        // Open Paystack payment page
+        window.open(response.data.authorization_url, '_blank');
+        
+        // You can also redirect the current window
+        // window.location.href = response.data.authorization_url;
+      } else {
+        throw new Error('Failed to initialize payment');
+      }
+      
+    } catch (error) {
+      console.error('Error initializing Paystack payment:', error);
+      alert('Failed to initialize payment. Please try again.');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   if (safeItems.length === 0) {
@@ -342,7 +409,23 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
                 <span>${safeTotal.toFixed(2)}</span>
               </div>
             </div>
-            <Button className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-pink-500 hover:from-pink-500 hover:to-red-500 transition-all rounded-xl shadow-lg">Checkout</Button>
+            <Button 
+              onClick={handlePaystackCheckout}
+              disabled={isProcessingPayment}
+              className="w-full py-3 text-lg font-bold bg-gradient-to-r from-red-500 to-pink-500 hover:from-pink-500 hover:to-red-500 transition-all rounded-xl shadow-lg flex items-center justify-center gap-2"
+            >
+              {isProcessingPayment ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-5 h-5" />
+                  Pay with Paystack
+                </>
+              )}
+            </Button>
             <Button variant="ghost" onClick={onClearCart} className="w-full text-red-500 hover:bg-red-500/10 rounded-xl">Clear Cart</Button>
           </Card>
         </div>

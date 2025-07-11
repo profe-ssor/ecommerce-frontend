@@ -10,9 +10,7 @@ export interface OrderItem {
 }
 
 export interface Order {
- 
   date: string | number | Date;
- 
   shippingAddress: any;
   paymentMethod: any;
   id: number;

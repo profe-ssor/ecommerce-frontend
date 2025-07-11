@@ -1,5 +1,6 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Buttershine:wght@400&display=swap');
 
 @import "tailwindcss";
 @tailwind base;
@@ -13,6 +14,8 @@
   --primary-light: #fff1f1;
   --deep-blue: #074786;
   --deep-blue-dark: #063a73;
+  --custom-red: #ff272a;
+  --custom-blue: #074786;
 }
 @layer base {
   html {
@@ -100,6 +103,34 @@
     --tw-ring-color: rgb(255 39 42 / var(--tw-ring-opacity));
   }
   
+  .font-buttershine {
+    font-family: "Buttershine", cursive;
+  }
+  
+  .text-custom-red {
+    color: var(--custom-red);
+  }
+  
+  .bg-custom-red {
+    background-color: var(--custom-red);
+  }
+  
+  .border-custom-red {
+    border-color: var(--custom-red);
+  }
+  
+  .text-custom-blue {
+    color: var(--custom-blue);
+  }
+  
+  .bg-custom-blue {
+    background-color: var(--custom-blue);
+  }
+  
+  .border-custom-blue {
+    border-color: var(--custom-blue);
+  }
+  
   .text-deep-blue {
     color: var(--deep-blue);
   }
@@ -171,6 +202,7 @@
 
 @theme {
     --font-inter: "Inter", sans-serif;
+    --font-buttershine: "Buttershine", cursive;
 }
 
 @keyframes float1 {

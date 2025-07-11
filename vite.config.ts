@@ -8,4 +8,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api/paystack': {
+        target: 'https://paystack-integration-ldwp.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/paystack/, ''),
+      },
+    },
+  },
 })

@@ -23,8 +23,11 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const isInWishlist = state.wishlist.includes(product.id);
-  const discountPercentage = product.compare_price 
-    ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
+  const price = typeof product.price === 'number' ? product.price : parseFloat(product.price as string);
+  const comparePrice = product.compare_price ? (typeof product.compare_price === 'number' ? product.compare_price : parseFloat(product.compare_price as string)) : null;
+  
+  const discountPercentage = comparePrice 
+    ? Math.round(((comparePrice - price) / comparePrice) * 100)
     : 0;
 
   const imageUrl = getProductImageUrl(product.image, product.category);
@@ -95,6 +98,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col space-y-1">
+          {product.is_featured && (
+            <span className="bg-yellow-500 text-white text-xs font-medium px-2 py-1 rounded">FEATURED</span>
+          )}
           {product.is_new && (
             <span className="bg-primary text-white text-xs font-medium px-2 py-1 rounded">NEW</span>
           )}
@@ -167,11 +173,11 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Price */}
         <div className="flex items-center space-x-2">
           <span className="text-lg font-semibold text-gray-900">
-            ${product.price.toFixed(2)}
+            ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price as string).toFixed(2)}
           </span>
           {product.compare_price && (
             <span className="text-sm text-gray-500 line-through">
-              ${product.compare_price.toFixed(2)}
+              ${typeof product.compare_price === 'number' ? product.compare_price.toFixed(2) : parseFloat(product.compare_price as string).toFixed(2)}
             </span>
           )}
         </div>

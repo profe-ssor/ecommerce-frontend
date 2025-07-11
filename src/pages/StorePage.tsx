@@ -6,7 +6,6 @@ import { ShoppingBag, History } from 'lucide-react';
 import { ProductGrid } from './order/ProductGrid';
 import { Checkout } from './order/Checkout';
 import { OrderHistory } from './order/OrderHistory';
-import { Button } from './order/ui/Button';
 import { ToastContainer } from './order/ui/Toast';
 
 import {
@@ -39,74 +38,76 @@ type ShippingAddress = {
   zipCode: string;
   country: string;
 };
-// import type { PaymentMethodData } from '../types/order';
-// TODO: Define PaymentMethodData type here or import from the correct module if it exists elsewhere.
+
 type PaymentMethodData =
   | { id: 'credit'; method: 'credit'; last4: string; brand: string }
   | { id: 'paypal'; method: 'paypal' };
 
-
-
 export default function StorePage() {
   const navigate = useNavigate();
   const location = useLocation();
-
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartTotal, setCartTotal] = useState<number>(0);
+  const [cartTotal, setCartTotal] = useState(0);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
-  // Fetch cart and orders on load
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const cart = await getCart();
-        setCartItems(cart.items);
-        setCartTotal(cart.total_price);
-        const fetchedOrders = await getOrders();
-        setOrders(fetchedOrders);
-      } catch (err) {
-        console.error('Error initializing store:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchCart();
+    fetchOrders();
   }, []);
 
-  
-  
-  const handleAddToCart = (product: Product) => {
-    addToCart(Number(product.id), 1)
-      .then(() => getCart())
-      .then((updatedCart) => {
-        setCartItems(updatedCart.items);
-        setCartTotal(updatedCart.total_price);
-      })
-      .catch((err) => {
-        console.error('Error adding to cart:', err);
-      });
+  const fetchCart = async () => {
+    try {
+      const cartData = await getCart();
+      setCartItems(cartData.items);
+      setCartTotal(cartData.total_price);
+    } catch (error) {
+      console.error('Error fetching cart:', error);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const ordersData = await getOrders();
+      setOrders(ordersData);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
+  const handleAddToCart = async (product: Product, quantity: number = 1, selectedSize?: string, selectedColor?: string) => {
+    try {
+      await addToCart(Number(product.id), quantity, selectedSize, selectedColor);
+      await fetchCart();
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
   const handleUpdateQuantity = async (itemId: number, quantity: number) => {
-    await updateCartItem(String(itemId), quantity);
-    const updatedCart = await getCart();
-    setCartItems(updatedCart.items);
-    setCartTotal(updatedCart.total_price);
+    try {
+      await updateCartItem(String(itemId), quantity);
+      await fetchCart();
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+    }
   };
 
   const handleRemoveFromCart = async (itemId: number) => {
-    await removeFromCart(String(itemId));
-    const updatedCart = await getCart();
-    setCartItems(updatedCart.items);
-    setCartTotal(updatedCart.total_price);
+    try {
+      await removeFromCart(String(itemId));
+      await fetchCart();
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    }
   };
 
   const handleClearCart = async () => {
-    await clearCart();
-    setCartItems([]);
-    setCartTotal(0);
+    try {
+      await clearCart();
+      await fetchCart();
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
   };
 
   const handlePlaceOrder = async (address: ShippingAddress, paymentMethod: PaymentMethodData) => {
@@ -118,6 +119,7 @@ export default function StorePage() {
       zip_code: address.zipCode,
       country: address.country,
     };
+    
     // Map payment method to string for backend
     const paymentMethodString = paymentMethod.method;
     const orderData: CreateOrderData = {
@@ -125,10 +127,16 @@ export default function StorePage() {
       billing_address: backendAddress,
       payment_method: paymentMethodString,
     };
-    const newOrder = await createOrder(orderData);
-    setOrders([newOrder, ...orders]);
-    await handleClearCart();
-    navigate('/store/orders');
+    
+    try {
+      const newOrder = await createOrder(orderData);
+      setOrders([newOrder, ...orders]);
+      await handleClearCart();
+      navigate('/store/orders');
+    } catch (error) {
+      console.error('Error placing order:', error);
+      throw error;
+    }
   };
 
   // Add handler for updating cart item size/color (supporting multiple selections)
@@ -183,57 +191,32 @@ export default function StorePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <header className="sticky top-0 z-40 backdrop-blur-lg bg-black/20 border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                <ShoppingBag className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-white">ModernStore</h1>
-            </div>
-
-            <nav className="flex items-center gap-2">
-              <Button
-                variant={currentPath === '/store/products' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => navigate('/')}
-              >
-                Shop
-              </Button>
-
-              <Button
-                variant={['/store/cart', '/store/checkout'].includes(currentPath) ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => navigate('/store/cart')}
-                className="relative"
-              >
-                Cart
-                {cartItemsCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                    {cartItemsCount}
-                  </span>
-                )}
-              </Button>
-
-              <Button
-                variant={currentPath === '/store/orders' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => navigate('/store/orders')}
-              >
-                <History className="w-4 h-4 mr-2" />
-                Orders
-              </Button>
-            </nav>
+    <div className="min-h-screen bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-white">Store</h1>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/store/cart')}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <ShoppingBag size={20} />
+              <span>Cart ({cartItems.length})</span>
+            </button>
+            <button
+              onClick={() => navigate('/store/orders')}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              <History size={20} />
+              <span>Orders</span>
+            </button>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? <p className="text-white">Loading...</p> : renderView()}
-      </main>
-
+        {/* Main Content */}
+        {renderView()}
+      </div>
       <ToastContainer toasts={[]} onRemove={() => {}} />
     </div>
   );

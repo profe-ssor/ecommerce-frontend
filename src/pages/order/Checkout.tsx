@@ -5,8 +5,7 @@ import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { Input } from './ui/Input';
 import type { CartItem } from '../../types/cart';
-// Make sure ShippingAddress is exported from the correct file.
-// If it's actually in '../../types/cart', update the import as below:
+
 // Define ShippingAddress type locally since it's not exported from '../../types/cart'
 type ShippingAddress = {
   fullName: string;
@@ -20,7 +19,6 @@ type ShippingAddress = {
 type PaymentMethodData =
   | { id: 'credit'; method: 'credit'; last4: string; brand: string }
   | { id: 'paypal'; method: 'paypal' };
-
 
 interface CheckoutProps {
   items: CartItem[];
@@ -209,17 +207,17 @@ export const Checkout: React.FC<CheckoutProps> = ({
               <div key={item.id} className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-800">
                   <img
-                    src={item.product.image}
-                    alt={item.product.name}
+                    src={item.product_image}
+                    alt={item.product_name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="flex-1">
-                  <p className="text-white font-medium">{item.product.name}</p>
+                  <p className="text-white font-medium">{item.product_name}</p>
                   <p className="text-gray-400 text-sm">Qty: {item.quantity}</p>
                 </div>
                 <p className="text-white font-semibold">
-                  ${(item.product.price * item.quantity).toFixed(2)}
+                  ${(Number(item.product_price) * Number(item.quantity)).toFixed(2)}
                 </p>
               </div>
             ))}

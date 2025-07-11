@@ -32,7 +32,7 @@ const initialState: AppState = {
   },
   sortBy: 'featured',
   currentPage: 1,
-  itemsPerPage: 12,
+  itemsPerPage: 1000,
   isLoading: false,
   cart: [],
   wishlist: [],

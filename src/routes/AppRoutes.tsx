@@ -14,6 +14,9 @@ import { KidsBabyPage } from '../pages/KidsBabyPage';
 import { ClearancePage } from '../pages/ClearancePage';
 import { AfricanWare } from '../pages/AfricanWare';
 import StorePage from '../pages/StorePage';
+import { CategoryPage } from '../pages/CategoryPage';
+import { AccessoriesPage } from '../pages/AccessoriesPage';
+import { PaymentCallback } from '../pages/PaymentCallback';
 
 export default function AppRoutes() {
   return (
@@ -76,6 +79,14 @@ export default function AppRoutes() {
         }
       />
       <Route
+        path="/accessories"
+        element={
+          <MainLayout>
+            <AccessoriesPage />
+          </MainLayout>
+        }
+      />
+      <Route
         path="/kids-baby"
         element={
           <MainLayout>
@@ -108,6 +119,15 @@ export default function AppRoutes() {
         }
       />
       <Route path="/store/*" element={<StorePage />} />
+      <Route path="/store/payment/callback" element={<PaymentCallback />} />
+      <Route
+        path="/category/:categoryId"
+        element={
+          <MainLayout>
+            <CategoryPage />
+          </MainLayout>
+        }
+      />
     </Routes>
   );
 }

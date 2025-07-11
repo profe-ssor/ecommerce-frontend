@@ -16,8 +16,6 @@ export interface OrderItem {
   price: number;
 }
 
-
-
 export interface CreateOrderData {
   shipping_address: {
     street: string;
@@ -58,37 +56,6 @@ export const updateOrderStatus = async (orderId: string, status: string): Promis
     return response.data;
   } catch (error) {
     console.error('Error updating order status:', error);
-    throw error;
-  }
-};
-
-export const cancelOrder = async (orderId: string): Promise<Order> => {
-  try {
-    const response = await api.patch(`/orders/api/orders/${orderId}/cancel/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error cancelling order:', error);
-    throw error;
-  }
-};
-
-export const trackOrder = async (trackingNumber: string): Promise<Record<string, unknown>> => {
-  try {
-    const response = await api.get(`/orders/api/orders/track/${trackingNumber}/`);
-    return response.data;
-  } catch (error) {
-    console.error('Error tracking order:', error);
-    throw error;
-  }
-};
-
-// Get order history with pagination
-export const getOrderHistory = async (page: number = 1, pageSize: number = 10) => {
-  try {
-    const response = await api.get(`/orders/api/orders/?page=${page}&page_size=${pageSize}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching order history:', error);
     throw error;
   }
 };

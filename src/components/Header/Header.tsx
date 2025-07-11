@@ -11,8 +11,15 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import images from "../../assets/images/images";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchBar } from "./SearchBar";
+import { getCategories } from "../../services/productServices";
+
+interface Category {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 const Header = () => {
   const { state } = useApp();
@@ -20,8 +27,11 @@ const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const navItems = [
+    { name: "Home", path: "/home" },
     { name: "New Arrivals", path: "/new-arrivals" },
     { name: "Dresses", path: "/dresses" },
     { name: "Women", path: "/women" },
@@ -29,9 +39,24 @@ const Header = () => {
     { name: "African Ware", path: "/african" },
     { name: "Beauty & Accessories", path: "/beauty-accessories" },
     { name: "Kids & Baby", path: "/kids-baby" },
-    { name: "Home", path: "/home" },
+  
     { name: "Clearance", path: "/clearance" },
   ];
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -42,13 +67,13 @@ const Header = () => {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white shadow-sm">
+    <div className="sticky top-0 z-50 bg-white shadow-lg">
       {/* Navbar Middle */}
-      <div className="navbar_middle flex items-center justify-center bg-[#f0f2f3] w-full h-[84px]">
+      <div className="navbar_middle flex items-center justify-center bg-gradient-to-r from-[#ff272a] via-[#074786] to-[#ff272a] w-full h-[84px]">
         <div className="lg:container grid grid-cols-3 items-center">
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="lg:hidden p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors text-white"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -59,7 +84,7 @@ const Header = () => {
           <div className="logo_wrapper">
             <Link
               to="/"
-              className="text-3xl text-black font-inter font-medium capitalize flex items-center gap-2"
+              className="text-3xl text-white font-inter font-medium capitalize flex items-center gap-2 hover:text-[#ff272a] transition-colors"
             >
               <img src={images.logo1} alt="logo" className="w-[100px]" />
             </Link>
@@ -74,7 +99,7 @@ const Header = () => {
           <div className="navbar_middle_right flex items-center gap-4 justify-end">
             {/* Search (mobile toggle) */}
             <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+              className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors lg:hidden text-white"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               aria-label="Search"
             >
@@ -82,11 +107,11 @@ const Header = () => {
             </button>
 
             {/* Cart */}
-           <Link to="/store/cart" className="btn capitalize relative">
+           <Link to="/store/cart" className="btn capitalize relative bg-white text-[#074786] border-2 border-white hover:bg-[#ff272a] hover:text-white hover:border-[#ff272a] transition-all duration-300 font-semibold shadow-md">
   <ShoppingCart />
   cart
   {state.cart.length > 0 && (
-    <div className="badge badge-sm bg-[#029fae] absolute -top-1 -right-2">
+    <div className="badge badge-sm bg-[#ff272a] absolute -top-1 -right-2 text-white font-bold">
       {state.cart.length}
     </div>
   )}
@@ -94,10 +119,10 @@ const Header = () => {
 
 
             {/* Wishlist */}
-            <button className="btn capitalize relative">
+            <button className="btn capitalize relative bg-white text-[#074786] border-2 border-white hover:bg-[#ff272a] hover:text-white hover:border-[#ff272a] transition-all duration-300 font-semibold shadow-md">
               <Heart />
               {state.wishlist.length > 0 && (
-                <span className="badge badge-sm bg-[#029fae] absolute -top-1 -right-2">
+                <span className="badge badge-sm bg-[#ff272a] absolute -top-1 -right-2 text-white font-bold">
                   {state.wishlist.length}
                 </span>
               )}
@@ -105,7 +130,7 @@ const Header = () => {
 
             {/* User Dropdown */}
             <div className="dropdown">
-              <div tabIndex={0} role="button" className="btn m-1">
+              <div tabIndex={0} role="button" className="btn m-1 bg-white text-[#074786] border-2 border-white hover:bg-[#ff272a] hover:text-white hover:border-[#ff272a] transition-all duration-300 font-semibold shadow-md">
                 <User />
                 {isAuthenticated && user && (
                   <span className="hidden md:inline ml-2">{user.username}</span>
@@ -153,7 +178,7 @@ const Header = () => {
       )}
 
       {/* Navbar Bottom */}
-      <div className="navbar_bottom flex items-center justify-center w-full h-[75px] bg-white border-b-[1px] border-[#e1e3e5]">
+      <div className="navbar_bottom flex items-center justify-center w-full h-[75px] bg-white border-b-[1px] border-[#074786] shadow-sm">
         <div className="lg:container flex items-center justify-between">
           <div className="navbar_bottom_left flex items-center gap-8">
             {/* Categories Dropdown */}
@@ -161,15 +186,24 @@ const Header = () => {
               <div
                 tabIndex={0}
                 role="button"
-                className="btn m-1 flex items-center gap-5 capitalize"
+                className="btn m-1 flex items-center gap-5 capitalize bg-[#074786] hover:bg-[#ff272a] text-white border-none transition-all duration-300"
               >
                 <Menu /> all categories
               </div>
               <ul className="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
-                <li>Chair</li>
-                <li>Pant</li>
-                <li>Shirt</li>
-                <li>T-Shirt</li>
+                {loading ? (
+                  <li className="text-gray-500">Loading...</li>
+                ) : categories.length > 0 ? (
+                  categories.map((category) => (
+                    <li key={category.id}>
+                      <Link to={`/category/${category.id}`} className="capitalize">
+                        {category.name}
+                      </Link>
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-gray-500">No categories available</li>
+                )}
               </ul>
             </div>
 
@@ -182,11 +216,11 @@ const Header = () => {
                   className={({ isActive }) =>
                     `text-sm font-inter font-medium capitalize transition-colors ${
                       isActive
-                        ? "text-mainblue"
-                        : "text-[#636270] hover:text-mainblue"
+                        ? "text-[#ff272a] font-bold"
+                        : "text-[#074786] hover:text-[#ff272a]"
                     } ${
                       item.name === "Clearance"
-                        ? "text-red-600 font-bold"
+                        ? "text-[#ff272a] font-bold"
                         : ""
                     }`
                   }
@@ -197,27 +231,22 @@ const Header = () => {
             </nav>
           </div>
 
-          {/* Contact Info */}
-          <div className="navbar_bottom_right">
-            <p className="text-sm text-[#636270] font-inter font-normal capitalize">
-              contact: <span className="text-[#272343]">(808)555-0111</span>
-            </p>
-          </div>
+      
         </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
-        <div className="lg:hidden border-t bg-white">
+        <div className="lg:hidden border-t border-[#074786] bg-white">
           <nav className="container mx-auto px-4 py-4">
             <div className="space-y-4">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`block text-gray-700 hover:text-mainblue font-medium transition-colors py-2 ${
-                    location.pathname === item.path ? "text-mainblue" : ""
-                  } ${item.name === "Clearance" ? "text-red-600 font-bold" : ""}`}
+                  className={`block text-[#074786] hover:text-[#ff272a] font-medium transition-colors py-2 ${
+                    location.pathname === item.path ? "text-[#ff272a] font-bold" : ""
+                  } ${item.name === "Clearance" ? "text-[#ff272a] font-bold" : ""}`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}

@@ -49,12 +49,16 @@ interface BackendProduct {
 const transformProduct = (backendProduct: BackendProduct): Product => {
   console.log('🔄 Transforming product:', backendProduct.name);
   
-  // Process main image
-  const mainImage = getProductImageUrl(backendProduct.image, backendProduct.category);
+  // Process main image - if it's already a full URL, use it directly
+  const mainImage = backendProduct.image.startsWith('http') 
+    ? backendProduct.image 
+    : getProductImageUrl(backendProduct.image, backendProduct.category);
   
   // Process additional images if they exist
   const additionalImages = backendProduct.images 
-    ? backendProduct.images.map((img: string) => getProductImageUrl(img, backendProduct.category))
+    ? backendProduct.images.map((img: string) => 
+        img.startsWith('http') ? img : getProductImageUrl(img, backendProduct.category)
+      )
     : [mainImage]; // Fallback to main image if no additional images
   
   const transformedProduct: Product = {
@@ -209,6 +213,19 @@ export const searchProducts = async (query: string): Promise<Product[]> => {
     return transformedProducts;
   } catch (error) {
     console.error('❌ Error searching products:', error);
+    throw error;
+  }
+};
+
+// Get collections
+export const getCollections = async () => {
+  try {
+    console.log('📡 Fetching collections');
+    const response = await api.get('/products/api/collections/');
+    console.log('✅ Collections fetched successfully');
+    return response.data;
+  } catch (error) {
+    console.error('❌ Error fetching collections:', error);
     throw error;
   }
 };

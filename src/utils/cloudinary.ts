@@ -75,16 +75,22 @@ export const getProductImageUrl = (
   if (!imagePath) {
     return '';
   }
-  if (imagePath.startsWith('image/upload/')) {
-    imagePath = imagePath.replace(/^image\/upload\//, '');
-  }
+  
+  // If it's already a full Cloudinary URL, return as-is
   if (imagePath.startsWith('http://res.cloudinary.com/') || imagePath.startsWith('https://res.cloudinary.com/')) {
     return imagePath;
   }
-  // If imagePath already contains 'ecommerce/', use as-is
+  
+  // If it already contains the full Cloudinary path structure, construct the URL properly
+  if (imagePath.startsWith('image/upload/')) {
+    return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${imagePath}`;
+  }
+  
+  // If imagePath already contains 'ecommerce/', use as-is (this is the case for our resource IDs)
   if (imagePath.startsWith('ecommerce/')) {
     return `${CLOUD_BASE_URL}/v1/${imagePath}`;
   }
+  
   // Otherwise, build the path using category
   const key = category?.toLowerCase().replace(/\s+/g, ' ') as keyof typeof CATEGORY_FOLDERS;
   const folder = CATEGORY_FOLDERS[key] || 'general';
