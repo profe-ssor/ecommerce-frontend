@@ -94,6 +94,8 @@ const transformProduct = (backendProduct: BackendProduct): Product => {
   return transformedProduct;
 };
 
+export { transformProduct };
+
 export const getProducts = async (filters: ProductFilters = {}): Promise<ProductResponse> => {
   try {
     console.log('📡 Fetching products with filters:', filters);

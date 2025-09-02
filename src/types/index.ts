@@ -62,6 +62,7 @@ export interface AppState {
   isLoading: boolean;
   cart: CartItem[];
   wishlist: string[];
+  wishlistProducts: Product[];
   totalProducts: number;
 }
 

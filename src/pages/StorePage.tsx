@@ -112,19 +112,16 @@ export default function StorePage() {
 
   const handlePlaceOrder = async (address: ShippingAddress, paymentMethod: PaymentMethodData) => {
     // Map frontend address to backend format
-    const backendAddress = {
-      street: address.address,
-      city: address.city,
-      state: address.state,
-      zip_code: address.zipCode,
-      country: address.country,
+    // Format address as a single string
+    const formatAddress = (addr: ShippingAddress) => {
+      return `${addr.fullName}, ${addr.address}, ${addr.city}, ${addr.state} ${addr.zipCode}, ${addr.country}`;
     };
     
-    // Map payment method to string for backend
+    const formattedAddress = formatAddress(address);
     const paymentMethodString = paymentMethod.method;
+    
     const orderData: CreateOrderData = {
-      shipping_address: backendAddress,
-      billing_address: backendAddress,
+      shipping_address: formattedAddress,
       payment_method: paymentMethodString,
     };
     

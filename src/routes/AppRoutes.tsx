@@ -17,6 +17,9 @@ import StorePage from '../pages/StorePage';
 import { CategoryPage } from '../pages/CategoryPage';
 import { AccessoriesPage } from '../pages/AccessoriesPage';
 import { PaymentCallback } from '../pages/PaymentCallback';
+import ProductDetailPage from '../pages/ProductDetailPage';
+import WishlistPage from '../pages/WishlistPage';
+import ContactUsPage from '../pages/ContactUsPage';
 
 export default function AppRoutes() {
   return (
@@ -125,6 +128,30 @@ export default function AppRoutes() {
         element={
           <MainLayout>
             <CategoryPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/products/:productId"
+        element={
+          <MainLayout>
+            <ProductDetailPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/wishlist"
+        element={
+          <MainLayout>
+            <WishlistPage />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <MainLayout>
+            <ContactUsPage />
           </MainLayout>
         }
       />

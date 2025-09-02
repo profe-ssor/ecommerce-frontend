@@ -36,7 +36,7 @@ const Header = () => {
     { name: "Dresses", path: "/dresses" },
     { name: "Women", path: "/women" },
     { name: "Men", path: "/men" },
-    { name: "African Ware", path: "/african" },
+    { name: "African Wear", path: "/african" },
     { name: "Beauty & Accessories", path: "/beauty-accessories" },
     { name: "Kids & Baby", path: "/kids-baby" },
   
@@ -119,14 +119,14 @@ const Header = () => {
 
 
             {/* Wishlist */}
-            <button className="btn capitalize relative bg-white text-[#074786] border-2 border-white hover:bg-[#ff272a] hover:text-white hover:border-[#ff272a] transition-all duration-300 font-semibold shadow-md">
+            <Link to="/wishlist" className="btn capitalize relative bg-white text-[#074786] border-2 border-white hover:bg-[#ff272a] hover:text-white hover:border-[#ff272a] transition-all duration-300 font-semibold shadow-md">
               <Heart />
               {state.wishlist.length > 0 && (
                 <span className="badge badge-sm bg-[#ff272a] absolute -top-1 -right-2 text-white font-bold">
                   {state.wishlist.length}
                 </span>
               )}
-            </button>
+            </Link>
 
             {/* User Dropdown */}
             <div className="dropdown">

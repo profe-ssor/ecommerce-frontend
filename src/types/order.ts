@@ -1,4 +1,5 @@
 import type { Product } from ".";
+import type { Key } from 'react';
 
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered';
 

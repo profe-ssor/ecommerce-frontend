@@ -28,7 +28,7 @@ export function CategoryPage() {
     const fetchCategory = async () => {
       try {
         const categories = await getCategories();
-        const foundCategory = categories.find(cat => cat.id === Number(categoryId));
+        const foundCategory = categories.find((cat: Category) => cat.id === Number(categoryId));
         setCategory(foundCategory || null);
       } catch (error) {
         console.error('Error fetching category:', error);
@@ -46,8 +46,8 @@ export function CategoryPage() {
   const categoryProducts = state.products.filter(product => {
     // Check if product belongs to this category
     return product.category?.toLowerCase() === category?.name?.toLowerCase() ||
-           product.category_names?.some(cat => cat.toLowerCase() === category?.name?.toLowerCase()) ||
-           product.tags.some(tag => tag.toLowerCase().includes(category?.name?.toLowerCase() || ''));
+           product.category_names?.some((cat: string) => cat.toLowerCase() === category?.name?.toLowerCase()) ||
+           product.tags.some((tag: string) => tag.toLowerCase().includes(category?.name?.toLowerCase() || ''));
   });
 
   const filteredProducts = useProductFiltering(categoryProducts, state.filters, state.sortBy);

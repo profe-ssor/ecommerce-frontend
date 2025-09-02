@@ -1,27 +1,10 @@
 import React, { useState } from 'react';
-import { Minus, Plus, ShoppingBag, Trash2, X, CreditCard } from 'lucide-react';
-import type { Product } from '../../types';
-import { Card } from './ui/Card';
+import { ShoppingBag, X, CreditCard, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from './ui/Button';
+import { Card } from './ui/Card';
+import type { CartItem } from '../../types/cart';
 import { getProductImageUrl } from '../../utils/cloudinary';
-import { initializePaystackPayment, testProxyConnection } from '../../services/paystackService';
-
-export interface CartItem {
-  id: number;
-  product: Product;
-  product_name: string;
-  product_price: number | string;
-  product_image: string;
-  quantity: number | string;
-  total_price: number | string;
-  added_at: string;
-  selected_size?: string;
-  selected_color?: string;
-  product_sizes?: string[];
-  product_colors?: string[];
-  product_category?: string;
-  category?: string;
-}
+import { useAuth } from '../../context/AuthContext';
 
 interface ShoppingCartProps {
   items: CartItem[];
@@ -39,14 +22,10 @@ const CartItemComponent: React.FC<{
   onRemoveItem: (itemId: number) => void;
   onUpdateCartItem: (itemId: number, quantity: number, selected_size?: string, selected_color?: string) => void;
 }> = ({ item, onUpdateQuantity, onRemoveItem, onUpdateCartItem }) => {
-  const safePrice = typeof item.product_price === 'number' 
-    ? item.product_price 
-    : parseFloat(item.product_price?.toString() || '0');
+  // Safely convert quantity and price to numbers
+  const safeQuantity = typeof item.quantity === 'string' ? parseInt(item.quantity, 10) : item.quantity;
+  const safePrice = typeof item.product_price === 'string' ? parseFloat(item.product_price) : item.product_price;
   
-  const safeQuantity = typeof item.quantity === 'number'
-    ? item.quantity
-    : parseInt(item.quantity?.toString() || '1', 10);
-
   // Get sizes and colors with fallbacks
   let availableSizes = item.product?.sizes || [];
   let availableColors = item.product?.colors || [];
@@ -257,6 +236,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
 }) => {
   const safeItems = items || [];
   const safeTotal = total || 0;
+  const { user, isAuthenticated } = useAuth();
 
   // State for delete modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -289,59 +269,50 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({
     setIsProcessingPayment(true);
     
     try {
-      // Test proxy connection first
-      await testProxyConnection();
+      // Generate unique reference using the same format as hosted PayStack
+      const reference = `PAY_${Date.now().toString(36).toUpperCase()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       
-      // Generate unique reference
-      const reference = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      // Calculate total amount
+      const totalAmount = parseFloat(safeTotal.toFixed(2));
       
-      // Prepare payment data
-      const paymentData = {
-        email: 'customer@example.com', // You can get this from user context
-        amount: parseFloat(safeTotal.toFixed(2)), // Amount in decimal format
-        currency: 'NGN',
-        payment_method: 'card',
-        customer_name: 'Customer Name', // You can get this from user context
-        customer_phone: '', // Optional
-        customer_country: 'NG',
-        mobile_money_provider: '', // Optional
-        mobile_money_number: '', // Optional
-        bank_code: '', // Optional
-        callback_url: `${window.location.origin}/store/payment/callback?reference=${reference}`,
-        metadata: {
-          reference: reference,
-          cart_items: safeItems.map(item => ({
-            id: item.id,
-            name: item.product_name,
-            quantity: item.quantity,
-            price: item.product_price
-          })),
-          total_amount: safeTotal
-        }
+      // Prepare order data for PayStack frontend
+      const orderData = {
+        order_id: reference,
+        amount: totalAmount,
+        email: user?.email || 'guest@example.com',
+        customer_name: user?.username || 'Guest User',
+        currency: 'NGN', // TODO: Auto-detect or allow user selection
+        success_url: 'http://localhost:5175/store/orders',
+        failure_url: 'http://localhost:5175/store/cart',
+        order_summary: `${safeItems.length} items - ${reference}`
       };
       
-      console.log('Initializing Paystack payment with data:', paymentData);
-      
-      // Initialize Paystack payment
-      const response = await initializePaystackPayment(paymentData);
-      
-      console.log('Paystack response:', response);
-      
-      if (response.status && response.data.authorization_url) {
-        console.log('Redirecting to:', response.data.authorization_url);
-        // Open Paystack payment page
-        window.open(response.data.authorization_url, '_blank');
-        
-        // You can also redirect the current window
-        // window.location.href = response.data.authorization_url;
+      // Show different message based on authentication status
+      if (!isAuthenticated) {
+        console.log('Guest checkout - user will need to provide email/name on PayStack page');
       } else {
-        throw new Error('Failed to initialize payment');
+        console.log('Authenticated checkout - using user data:', user?.email, user?.username);
       }
       
+      // Build URL for hosted PayStack frontend
+      const paystackUrl = new URL('https://pay-stack-dun.vercel.app');
+      
+      // Add order data as URL parameters
+      Object.entries(orderData).forEach(([key, value]) => {
+        paystackUrl.searchParams.append(key, value.toString());
+      });
+      
+      console.log('Redirecting to PayStack frontend:', paystackUrl.toString());
+      
+      // Add a small delay to show the processing state
+      setTimeout(() => {
+        // Redirect to hosted PayStack frontend
+        window.location.href = paystackUrl.toString();
+      }, 1500); // 1.5 second delay to show processing state
+      
     } catch (error) {
-      console.error('Error initializing Paystack payment:', error);
-      alert('Failed to initialize payment. Please try again.');
-    } finally {
+      console.error('Error preparing PayStack checkout:', error);
+      alert('Failed to prepare payment. Please try again.');
       setIsProcessingPayment(false);
     }
   };

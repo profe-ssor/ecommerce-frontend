@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { getProducts } from '../services/productServices';
+import { getProducts, transformProduct } from '../services/productServices';
 import type { ProductFilters } from '../services/productServices';
 import { getCart } from '../services/cartServices';
 import { getWishlist } from '../services/wishlistServices';
@@ -13,7 +13,7 @@ type AppAction =
   | { type: 'SET_PAGE'; payload: number }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_CART'; payload: CartItem[] }
-  | { type: 'SET_WISHLIST'; payload: string[] }
+  | { type: 'SET_WISHLIST'; payload: { ids: string[]; products: Product[] } }
   | { type: 'ADD_TO_CART'; payload: CartItem }
   | { type: 'REMOVE_FROM_CART'; payload: string }
   | { type: 'TOGGLE_WISHLIST'; payload: string }
@@ -36,6 +36,7 @@ const initialState: AppState = {
   isLoading: false,
   cart: [],
   wishlist: [],
+  wishlistProducts: [], // <-- add this
   totalProducts: 0,
 };
 
@@ -78,7 +79,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_WISHLIST':
       return {
         ...state,
-        wishlist: action.payload,
+        wishlist: action.payload.ids,
+        wishlistProducts: action.payload.products,
       };
     case 'ADD_TO_CART':
       return {
@@ -164,35 +166,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Call the backend API to get cart data
       const cartData = await getCart();
       // Transform cart data to match your existing cart structure
-const cartItems: CartItem[] = cartData.items.map(item => ({
-  id: item.id, // Ensure this matches the unique identifier for the cart item
-  product: {
-    id: item.product.toString(),
-    name: item.product_name,
-    price: item.product_price,
-    image: item.product_image,
-    brand: '',
-    brand_name: '',
-    category: '',
-    subcategory: '',
-    category_names: [],
-    color_names: [],
-    size_names: [],
-    colors: [],
-    sizes: [],
-    compare_price: 0,
-    description: '',
-    images: [item.product_image],
-    is_featured: false,
-    is_new: false,
-    rating: 0,
-    review_count: 0,
-    tags: [],
-  },
-  quantity: item.quantity,
-  selectedSize: item.selected_size,
-  selectedColor: item.selected_color,
-}));
+const cartItems: CartItem[] = cartData.items.map(item => {
+  const productPrice = Number(item.product?.price || item.product_price || 0);
+  const quantity = Number(item.quantity || 1);
+  
+  return {
+    id: item.id,
+    product: {
+      id: String(item.product?.id || 0),
+      name: item.product?.name || item.product_name || '',
+      price: productPrice,
+      image: item.product?.image || item.product_image || '',
+      images: item.product?.images || [item.product_image || ''].filter(Boolean),
+      brand: item.product?.brand || '',
+      brand_name: item.product?.brand_name || '',
+      category: item.product?.category || item.product_category || '',
+      subcategory: item.product?.subcategory || '',
+      category_names: item.product?.category_names || [item.product_category || ''].filter(Boolean),
+      color_names: item.product?.color_names || [],
+      size_names: item.product?.size_names || [],
+      colors: item.product?.colors || item.product_colors || [],
+      sizes: item.product?.sizes || item.product_sizes || [],
+      description: item.product?.description || '',
+      stock: item.product?.stock || 0,
+      is_new: item.product?.is_new || false,
+      is_featured: item.product?.is_featured || false,
+      rating: item.product?.rating || 0,
+      review_count: item.product?.review_count || 0,
+      tags: item.product?.tags || [],
+    },
+    product_name: item.product_name || item.product?.name || '',
+    product_price: productPrice,
+    product_image: item.product_image || item.product?.image || '',
+    quantity: quantity,
+    total_price: productPrice * quantity,
+    added_at: item.added_at || new Date().toISOString(),
+    selected_size: item.selected_size,
+    selected_color: item.selected_color,
+    product_sizes: item.product_sizes || item.product?.sizes || [],
+    product_colors: item.product_colors || item.product?.colors || [],
+    product_stock: item.product_stock || item.product?.stock || 0,
+    product_category: item.product_category || item.product?.category || '',
+  };
+});
 
       dispatch({ type: 'SET_CART', payload: cartItems });
     } catch (error) {
@@ -202,12 +218,40 @@ const cartItems: CartItem[] = cartData.items.map(item => ({
 
   const fetchWishlist = React.useCallback(async () => {
     if (!isAuthenticated) return;
-    
     try {
       // Call the backend API to get wishlist data
       const wishlistData = await getWishlist();
-      const wishlistIds = wishlistData.map(item => item.product.toString());
-      dispatch({ type: 'SET_WISHLIST', payload: wishlistIds });
+      const wishlistIds = wishlistData.map(item => item.product.id.toString());
+      const wishlistProducts = wishlistData.map(item => {
+        // Create a complete product object with all required fields
+        const productData = {
+          id: item.product.id,
+          name: item.product.name,
+          brand: item.product.brand,
+          price: item.product.price,
+          image: item.product.image,
+          // Required fields with defaults
+          category: 'uncategorized',
+          subcategory: '',
+          colors: [],
+          sizes: [],
+          is_new: false,
+          is_featured: false,
+          rating: 0,
+          review_count: 0,
+          description: '',
+          tags: [],
+          stock: 0,
+          // Additional fields that might be needed
+          compare_price: undefined,
+          images: [item.product.image],
+          color_names: [],
+          size_names: [],
+          category_names: []
+        };
+        return transformProduct(productData);
+      });
+      dispatch({ type: 'SET_WISHLIST', payload: { ids: wishlistIds, products: wishlistProducts } });
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     }

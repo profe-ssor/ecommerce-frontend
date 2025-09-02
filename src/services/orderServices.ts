@@ -17,22 +17,9 @@ export interface OrderItem {
 }
 
 export interface CreateOrderData {
-  shipping_address: {
-    street: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    country: string;
-  };
-  billing_address: {
-    street: string;
-    city: string;
-    state: string;
-    zip_code: string;
-    country: string;
-  };
+  shipping_address?: string;
   payment_method: string;
-  payment_token?: string;
+  notes?: string;
 }
 
 export const getOrders = async (): Promise<Order[]> => {

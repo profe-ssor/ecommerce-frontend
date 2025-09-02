@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 
-import { getCart, updateCartItem, addToCart as addToCartService} from '../services/cartServices';
+import { getCart, updateCartItem, addToCart as addToCartService, removeFromCart as removeFromCartService } from '../services/cartServices';
 import type { CartItem } from '../types';
 
 export function useCart() {
@@ -97,7 +97,8 @@ export function useCart() {
 
   const removeFromCart = async (itemId: number) => {
     try {
-      await removeFromCart(itemId.toString());
+      // Make sure to use the service function, not a recursive call
+      await removeFromCartService(itemId.toString());
       setCartItems(prev => prev.filter(item => item.id !== itemId));
     } catch (error) {
       console.error('Error removing from cart:', error);

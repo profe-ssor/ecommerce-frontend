@@ -9,6 +9,8 @@ export interface CartItem {
   product_sizes?: string[];
   product_colors?: string[];
   product_stock?: number;
+  product_category?: string;
+  category?: string;
   quantity: number;
   total_price: number;
   added_at: string;
